@@ -1,0 +1,265 @@
+###############################################################################
+## Copyright (C), 2016-2017, Allwinner Tech. Co., Ltd.
+## file     : Makefile.param  $(TOP_DIR)
+## brief    : for all project Makefile param control
+## author   : wangguixing
+## versoion : V0.1 create
+## date     : 2017.04.14
+###############################################################################
+
+##################################################
+#
+# Define important directories path
+#
+##################################################
+#export TOP_DIR        := $(dir $(word $(words $(MAKEFILE_LIST)) , $(MAKEFILE_LIST)))
+export MPP_DIR          = /usr/include/mpp/middleware
+export SCRIPTS_DIR      = $(TOP_DIR)/scripts
+export TOP_MK_PARAM     = $(TOP_DIR)/Makefile.param
+export TOP_INC_DIR      = $(TOP_DIR)/include
+export TOP_REL_DIR      = $(TOP_DIR)/release
+export SDK_LIB_SO_DIR   = /usr/lib
+#export SDK_LIB_A_DIR    = $(TOP_DIR)/../../../output/staging/usr/lib
+
+
+##################################################
+#
+# Define Platform information. This make sure 
+# CROSS_COMPILE and other INFO CONFIG. e.g.
+# V40 -> CROSS_COMPILE = arm-linux-gnueabi-
+#
+##################################################
+export CHIP_TYPE        := V5
+export BOARD            := V5_DVB
+export DEBUG_FLAG       := Y
+export STRIP_FLAG       := Y
+export BUILD_DATE_TIME  ?= $(shell date +%Y%m%d-%H%M%S)
+
+
+##################################################
+#
+# Define Sample Compile option
+# APP_BUILD_MODE: MENU_MODE or SAMPLE_MODE
+# COMPILE_MODE: COMPILE_LIB_STATIC or COMPILE_LIB_SHARE
+#
+##################################################
+export APP_BUILD_MODE   := MENU_MODE #SAMPLE_MODE
+export COMPILE_MODE     := COMPILE_LIB_SHARE
+
+export CROSS_COMPILE := $(CROSS_COMPILER)-
+ifeq ($(CHIP_TYPE), V40)
+#export CROSS_COMPILE := arm-linux-gnueabi-
+#Defined Other information ...
+endif
+
+ifeq ($(CHIP_TYPE), V5)
+export CROSS_COMPILE := arm-linux-gnueabi-
+#Defined Other information ...
+endif
+
+
+##################################################
+#
+# Setup build C/CPP FLAG
+#
+##################################################
+export CC       = $(CROSS_COMPILE)gcc
+export CXX      = $(CROSS_COMPILE)g++
+export AR       = $(CROSS_COMPILE)ar
+export STRIP    = $(CROSS_COMPILE)strip
+
+INC_FLAGS :=
+INC_FLAGS += -I$(TOP_DIR)/include/
+INC_FLAGS += -I$(TOP_DIR)/include/rtsp/
+INC_FLAGS += -I$(TOP_DIR)/include/utils/
+INC_FLAGS += -I$(TOP_DIR)/include/media/
+INC_FLAGS += -I$(TOP_DIR)/include/V4l2Camera/
+
+INC_FLAGS += -I$(MPP_DIR)/../system/include
+INC_FLAGS += -I$(MPP_DIR)/../system/include/vo
+INC_FLAGS += -I$(MPP_DIR)/../system/include/kernel-headers
+INC_FLAGS += -I$(MPP_DIR)/../system/include/libion
+INC_FLAGS += -I$(MPP_DIR)/../system/include/libion/ion
+
+INC_FLAGS += -I$(MPP_DIR)/config
+INC_FLAGS += -I$(MPP_DIR)/include/utils
+INC_FLAGS += -I$(MPP_DIR)/include/media
+INC_FLAGS += -I$(MPP_DIR)/include/media/utils
+INC_FLAGS += -I$(MPP_DIR)/include
+INC_FLAGS += -I$(MPP_DIR)/media/include/utils
+INC_FLAGS += -I$(MPP_DIR)/media/include/component
+INC_FLAGS += -I$(MPP_DIR)/media/include/include_render
+INC_FLAGS += -I$(MPP_DIR)/media/include/videoIn
+INC_FLAGS += -I$(MPP_DIR)/media/include/audio
+INC_FLAGS += -I$(MPP_DIR)/media/include
+INC_FLAGS += -I$(MPP_DIR)/media/LIBRARY/libcedarc/include
+INC_FLAGS += -I$(MPP_DIR)/media/LIBRARY/audioEncLib/include
+INC_FLAGS += -I$(MPP_DIR)/media/LIBRARY/audioDecLib/include
+INC_FLAGS += -I$(MPP_DIR)/media/LIBRARY/audioEffectLib/include
+INC_FLAGS += -I$(MPP_DIR)/media/LIBRARY/include_demux
+INC_FLAGS += -I$(MPP_DIR)/media/LIBRARY/include_muxer
+INC_FLAGS += -I$(MPP_DIR)/media/LIBRARY/include_FsWriter
+INC_FLAGS += -I$(MPP_DIR)/media/LIBRARY/include_stream
+INC_FLAGS += -I$(MPP_DIR)/media/LIBRARY/libmuxer/mp4_muxer
+INC_FLAGS += -I$(MPP_DIR)/media/LIBRARY/libcedarx/libcore/include
+INC_FLAGS += -I$(MPP_DIR)/media/LIBRARY/libcedarx/libcore/base/include
+INC_FLAGS += -I$(MPP_DIR)/media/LIBRARY/libcedarx/libcore/common/iniparser
+INC_FLAGS += -I$(MPP_DIR)/media/LIBRARY/libcedarx/libcore/parser/include
+INC_FLAGS += -I$(MPP_DIR)/media/LIBRARY/libcedarx/libcore/stream/include
+INC_FLAGS += -I$(MPP_DIR)/media/LIBRARY/libcedarx
+INC_FLAGS += -I$(MPP_DIR)/media/LIBRARY/include_ai_common
+INC_FLAGS += -I$(MPP_DIR)/media/LIBRARY/libISE
+INC_FLAGS += -I$(MPP_DIR)/media/LIBRARY/libVLPR/include
+INC_FLAGS += -I$(MPP_DIR)/media/LIBRARY/libisp/include/V4l2Camera
+INC_FLAGS += -I$(MPP_DIR)/media/LIBRARY/libisp/include/device
+INC_FLAGS += -I$(MPP_DIR)/media/LIBRARY/libisp/include
+INC_FLAGS += -I$(MPP_DIR)/media/LIBRARY/libisp/isp_dev
+INC_FLAGS += -I$(MPP_DIR)/media/LIBRARY/libisp/isp_tuning
+INC_FLAGS += -I$(MPP_DIR)/media/LIBRARY/libisp
+INC_FLAGS += -I$(MPP_DIR)/media/LIBRARY/include_eve_common
+INC_FLAGS += -I$(MPP_DIR)/media/LIBRARY/libevekernel/include
+INC_FLAGS += -I$(MPP_DIR)/media/LIBRARY/libeveface/include
+
+INC_FLAGS += -I$(TOP_DIR)/src/common
+INC_FLAGS += -I$(TOP_DIR)/src/menu
+INC_FLAGS += -I$(TOP_DIR)/src/menu
+INC_FLAGS += -I$(TOP_DIR)/src/mpp
+INC_FLAGS += -I$(TOP_DIR)/src/mpp/mpp_comm/
+INC_FLAGS += -I$(TOP_DIR)/src/mpp/mpp_menu/
+
+LD_FLAG   :=
+LD_FLAG   += -L=/lib -L=/usr/lib
+LD_FLAG   += -L$(TOP_DIR)/lib -L$(SDK_LIB_SO_DIR) #-L$(SDK_LIB_A_DIR)
+LD_FLAG   += -lc
+LD_FLAG   += -lpthread
+LD_FLAG   += -lTinyServer
+LD_FLAG   += -llog
+#LD_FLAG   += -Wl,--allow-shlib-undefined
+
+LD_FLAG   += -lglog
+LD_FLAG   += -lasound
+LD_FLAG   += -lz
+
+ifeq ($(COMPILE_MODE), COMPILE_LIB_STATIC)
+###### Static lib #######
+
+else
+###### Share lib #######
+LD_FLAG   += -lcedarxrender -lmpp_vi -lmpp_isp -lmpp_ise -lmpp_vo -lmpp_component
+LD_FLAG   += -lmedia_mpp -lcdx_common -lISP -lMemAdapter -lvencoder -lmedia_utils -lhwdisplay
+LD_FLAG   += -l_ise_bi -l_ise_bi_soft -l_ise_mo -l_ise_sti -lion -lcedarxstream
+LD_FLAG   += -lcdx_parser -lcdx_stream  -lvdecoder -lnormal_audio
+LD_FLAG   += -lcutils -lcedarx_aencoder -lisp_ini  -lVE  -lcdc_base -lcdx_base
+LD_FLAG   += -lvideoengine -ladecoder
+endif
+
+LD_FLAG   += -lmpp_menu -lmenu  -lmpp_com -lcommon
+
+
+#LD_FLAG   += $(TOP_DIR)/lib/libglog.so.0
+#LD_FLAG   += $(TOP_DIR)/lib/libasound.so.2
+#LD_FLAG   += $(TOP_DIR)/lib/libz.so.1
+
+
+
+DEF_FLAGS += -D$(CHIP_TYPE) -D$(BOARD) -D$(APP_BUILD_MODE)
+
+CFLAGS    += -Wall -Wno-unused-but-set-variable -Wno-unused-variable -std=gnu99
+CXXFlAGS  += -Wall -Wno-unused-but-set-variable -fpermissive -std=c++11
+
+
+ifeq ($(DEBUG_FLAG), Y)
+export DEBUG_FLAG = Y
+CFLAGS    += -g
+CXXFlAGS  += -g
+DEF_FLAGS += -DINFO_DEBUG -DERR_DEBUG
+#export STRIP_FLAG = N
+else
+export DEBUG_FLAG = N
+#export STRIP_FLAG = Y
+endif
+
+
+export CFLAGS    += $(INC_FLAGS) $(DEF_FLAGS) $(LD_FLAG)
+export CXXFlAGS  += $(INC_FLAGS) $(DEF_FLAGS) $(LD_FLAG)
+
+export AR_FLAGS   = -rc
+
+DEPEND_FILE += libmpp_menu.a libmenu.a libmpp_com.a libcommon.a 
+
+ifeq ($(APP_BUILD_MODE), MENU_MODE)
+DEPEND_FILE += TinyServer.a libsample_vi_venc.a libsample_vi_vo_venc.a libsample_vi_vo.a 
+DEPEND_FILE += libsample_vi_venc_mux_vo.a libsample_vi_venc_mux.a libsample_vi_ise_venc_vo.a
+DEPEND_FILE += libsample_demux_vdec_vo.a libsample_demux_adec_ao.a libsample_ai_aenc_mux_ao.a
+DEPEND_FILE += libsample_vi_ai_encode_vo_ao.a libsample_vi_yuv_venc.a libsample_vi_eve_vo.a 
+endif
+
+##################################################
+#
+# Define important command
+#
+##################################################
+export ECHO 	= /bin/echo
+export RM		= /bin/rm -rf
+export CP		= /bin/cp -rf
+export LN		= /bin/ln
+export MKDIR	= /bin/mkdir
+export PRINTF	= /usr/bin/printf
+export EXIT		= exit
+export CD		= cd
+export SOURCE 	= source
+export CHMOD	= /bin/chmod
+# Just for bash .... you can you up!
+export PUSHD	= pushd >/dev/null
+export POPD		= popd  >/dev/null
+
+##################################################
+#
+# Build rule 
+#
+##################################################
+export ENV_CLEAR         := $(SCRIPTS_DIR)/env_clear.mk
+export BUILD_BIN         := $(SCRIPTS_DIR)/build_bin.mk
+export BUILD_CPP_BIN     := $(SCRIPTS_DIR)/build_cpp_bin.mk
+export BUILD_STATIC_LIB  := $(SCRIPTS_DIR)/build_lib.mk
+export BUILD_SHARED_LIB  := $(SCRIPTS_DIR)/build_so.mk
+
+
+##################################################
+#
+# Make function 
+#
+##################################################
+make_subdir =                                               \
+        @if [ -e $(1) -a -d $(1) ]; then                    \
+        $(CD) $(1); $(MAKE) all; $(CD) -;                   \
+        else                                                \
+        $(ECHO) "***Error: Folder $(1) not exist";          \
+        exit -1;                                            \
+        fi
+
+make_clean_subdir =                                         \
+        @if [ -e $(1) -a -d $(1) ]; then                    \
+        $(CD) $(1); $(MAKE) clean; $(CD) -;                 \
+        else                                                \
+        $(ECHO) "Warning: Folder $(1) not exist";           \
+        fi
+
+
+make_all_subdir =                                           \
+        @for dir in $(1);                                   \
+        do                                                  \
+        if [ -d $$dir ]; then                               \
+        $(CD) $$dir; $(MAKE) all; $(CD) -;                  \
+        fi;                                                 \
+        done
+
+
+make_clean_all_subdir =                                     \
+        @for dir in $(1);                                   \
+        do                                                  \
+        if [ -d $$dir ]; then                               \
+        $(CD) $$dir; $(MAKE) clean; $(CD) -;                \
+        fi;                                                 \
+        done
+

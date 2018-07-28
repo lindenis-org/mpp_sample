@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Module-CVEDTCA>
+	<Application>
+		<dim_w value="352" />
+		<dim_h value="288" />
+		<functions>
+			<defparam>
+				<perimeter>
+					<region>
+						<point x="0" y="0" />
+						<point x="351" y="0" />
+						<point x="351" y="287" />
+						<point x="0" y="287" />
+					</region>
+					<type_constrain value="1" />
+					<type_mode value="0" />
+					<size_constrain value="0" />
+					<size_min value="1000" />
+					<size_max value="100000" />
+				</perimeter>
+				<tripwire>
+					<twline>
+						<bidir value="0" />
+						<angle value="225" />
+						<line xs="105" ys="232" xe="232" ye="103" />
+					</twline>
+					<type_constrain value="1" />
+					<type_mode value="0" />
+					<size_constrain value="0" />
+					<size_min value="1000" />
+					<size_max value="100000" />
+				</tripwire>
+				<mtripwire>
+					<twline>
+						<time_max value="5" />
+						<angle1 value="225" />
+						<line1 xs="105" ys="262" xe="232" ye="133" />
+						<angle2 value="225" />
+						<line2 xs="105" ys="232" xe="232" ye="103" />
+					</twline>
+					<type_constrain value="1" />
+					<type_mode value="0" />
+					<size_constrain value="0" />
+					<size_min value="1000" />
+					<size_max value="100000" />
+				</mtripwire>
+				<loiter>
+					<region>
+						<point x="0" y="0" />
+						<point x="351" y="0" />
+						<point x="351" y="287" />
+						<point x="0" y="287" />
+					</region>
+					<type_constrain value="1" />
+					<type_mode value="0" />
+					<size_constrain value="0" />
+					<size_min value="1000" />
+					<size_max value="100000" />
+					<time_min value="10" />
+					<analysis_path value="1" />
+				</loiter>
+				<converse>
+					<region>
+						<point x="0" y="0" />
+						<point x="351" y="0" />
+						<point x="351" y="287" />
+						<point x="0" y="287" />
+					</region>
+					<type_constrain value="1" />
+					<type_mode value="0" />
+					<size_constrain value="0" />
+					<size_min value="1000" />
+					<size_max value="100000" />
+					<direction value="0" />
+				</converse>
+				<abnormalvel>
+					<region>
+						<point x="0" y="0" />
+						<point x="351" y="0" />
+						<point x="351" y="287" />
+						<point x="0" y="287" />
+					</region>
+					<type_constrain value="1" />
+					<type_mode value="0" />
+					<size_constrain value="0" />
+					<size_min value="1000" />
+					<size_max value="100000" />
+					<velo_flag value="0" />
+					<velo_min value="0" />
+					<velo_max value="5" />
+				</abnormalvel>
+				<mloiter>
+					<region>
+						<point x="0" y="0" />
+						<point x="351" y="0" />
+						<point x="351" y="287" />
+						<point x="0" y="287" />
+					</region>
+					<size_constrain value="0" />
+					<size_min value="1000" />
+					<size_max value="100000" />
+					<time_min value="10" />
+					<tgtnum_interval>
+						<forbidden value="1" />
+						<minimum value="2" />
+						<maximum value="-1" />
+					</tgtnum_interval>
+				</mloiter>
+				<noparking>
+					<region>
+						<point x="0" y="0" />
+						<point x="351" y="0" />
+						<point x="351" y="287" />
+						<point x="0" y="287" />
+					</region>
+					<size_min value="100" />
+					<size_max value="10000" />
+					<time_min value="5" />
+				</noparking>
+				<slipup>
+					<region>
+						<point x="0" y="0" />
+						<point x="351" y="0" />
+						<point x="351" y="287" />
+						<point x="0" y="287" />
+					</region>
+					<type_constrain value="1" />
+					<size_constrain value="0" />
+					<size_min value="1000" />
+					<size_max value="100000" />
+					<time_dura value="5" />
+					<height_ratio value="100" />
+				</slipup>
+				<objleft>
+					<region>
+						<point x="0" y="0" />
+						<point x="351" y="0" />
+						<point x="351" y="287" />
+						<point x="0" y="287" />
+					</region>
+					<size_min value="100" />
+					<size_max value="10000" />
+					<time_min value="5" />
+				</objleft>
+				<objremoved>
+					<region>
+						<point x="0" y="0" />
+						<point x="351" y="0" />
+						<point x="351" y="287" />
+						<point x="0" y="287" />
+					</region>
+					<size_min value="100" />
+					<size_max value="10000" />
+					<time_min value="5" />
+				</objremoved>
+				<v_converse>
+					<region>
+						<point x="0" y="0" />
+						<point x="351" y="0" />
+						<point x="351" y="287" />
+						<point x="0" y="287" />
+					</region>
+					<direction value="0" />
+				</v_converse>
+				<v_park>
+					<region>
+						<point x="0" y="0" />
+						<point x="351" y="0" />
+						<point x="351" y="287" />
+						<point x="0" y="287" />
+					</region>
+					<velo_max value="10" />
+				</v_park>
+				<v_overspeed>
+					<region>
+						<point x="0" y="0" />
+						<point x="351" y="0" />
+						<point x="351" y="287" />
+						<point x="0" y="287" />
+					</region>
+					<velo_min value="120" />
+				</v_overspeed>
+				<v_underspeed>
+					<region>
+						<point x="0" y="0" />
+						<point x="351" y="0" />
+						<point x="351" y="287" />
+						<point x="0" y="287" />
+					</region>
+					<velo_max value="30" />
+				</v_underspeed>
+				<v_occupation>
+					<region>
+						<point x="0" y="0" />
+						<point x="351" y="0" />
+						<point x="351" y="287" />
+						<point x="0" y="287" />
+					</region>
+				</v_occupation>
+				<h_across>
+					<region>
+						<point x="0" y="0" />
+						<point x="351" y="0" />
+						<point x="351" y="287" />
+						<point x="0" y="287" />
+					</region>
+				</h_across>
+				<o_left>
+					<region>
+						<point x="0" y="0" />
+						<point x="351" y="0" />
+						<point x="351" y="287" />
+						<point x="0" y="287" />
+					</region>
+					<size_min value="100" />
+					<size_max value="10000" />
+					<time_min value="5" />
+				</o_left>
+			</defparam>
+			<funcs>
+				<func>
+					<name value="perimeter" />
+					<enable value="1" />
+					<level value="3" />
+					<perimeter>
+						<region>
+							<point x="0" y="0" />
+							<point x="351" y="0" />
+							<point x="351" y="287" />
+							<point x="0" y="287" />
+						</region>
+						<type_constrain value="1" />
+						<type_mode value="0" />
+						<size_constrain value="0" />
+						<size_min value="1000" />
+						<size_max value="100000" />
+					</perimeter>
+				</func>
+			</funcs>
+		</functions>
+		<performance>
+			<do_istab value="0" />
+			<scene_mode value="0" />
+			<sensitivity value="1" />
+		</performance>
+	</Application>
+	<Advance>
+		<enable value="0" />
+		<system />
+		<detector>
+			<bgm_period value="0" />
+			<bgm_period_time value="15" />
+			<bgm_period_noise value="0" />
+			<sensi_high_noise value="0" />
+			<sensi_low_contrast value="0" />
+		</detector>
+		<tracker />
+		<classifier />
+		<analyst />
+		<head>
+			<detect_head value="0" />
+			<vote_mode value="1" />
+			<vote_ratio value="80" />
+			<circonf_rat value="25" />
+		</head>
+		<modh>
+			<use_caminfo value="1" />
+			<use_posinfo value="1" />
+			<cam_fov_vert value="50" />
+			<cam_height value="160" />
+			<tolerance_rat value="20" />
+			<tgt_height_min value="150" />
+			<view_dis_max value="1000" />
+			<reftgt_height value="0" />
+			<reftgt_pos_hy value="0" />
+			<reftgt_pos_fy value="0" />
+		</modh>
+	</Advance>
+</Module-CVEDTCA>

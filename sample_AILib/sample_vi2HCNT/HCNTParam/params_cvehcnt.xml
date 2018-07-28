@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Module-CVEHCNT2>
+	<Application>
+		<dim_w value="352" />
+		<dim_h value="288" />
+		<functions>
+			<defparam>
+				<perimeter>
+					<region>
+						<point x="0" y="0" />
+						<point x="351" y="0" />
+						<point x="351" y="287" />
+						<point x="0" y="287" />
+					</region>
+				</perimeter>
+				<humancount>
+					<cutline>
+						<line xs="0" ys="144" xe="351" ye="144" />
+					</cutline>
+				</humancount>
+			</defparam>
+			<funcs>
+				<func>
+					<name value="perimeter" />
+					<enable value="1" />
+					<level value="3" />
+					<perimeter>
+						<region>
+							<point x="0" y="0" />
+							<point x="351" y="0" />
+							<point x="351" y="287" />
+							<point x="0" y="287" />
+						</region>
+					</perimeter>
+				</func>
+				<func>
+					<name value="humancount" />
+					<enable value="0" />
+					<level value="3" />
+					<humancount>
+						<cutline>
+							<line xs="0" ys="144" xe="351" ye="144" />
+						</cutline>
+					</humancount>
+				</func>
+			</funcs>
+		</functions>
+	</Application>
+	<Performance>
+		<proc_interval value="100" />
+		<head_radevi value="0.300000" />
+		<ciruniq_rad value="80" />
+		<sensitivity value="0" />
+	</Performance>
+</Module-CVEHCNT2>

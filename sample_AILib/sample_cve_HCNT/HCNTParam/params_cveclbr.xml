@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Module-CVECLBR>
+	<Application>
+		<dim_w value="352" />
+		<dim_h value="288" />
+		<fdlines>
+			<line type="1" length="200" xs="160" ys="30" xe="160" ye="50" />
+			<line type="1" length="100" xs="160" ys="130" xe="160" ye="150" />
+			<line type="1" length="200" xs="40" ys="30" xe="40" ye="50" />
+			<line type="1" length="67" xs="40" ys="230" xe="40" ye="250" />
+		</fdlines>
+		<fdcoef cx="0.000000" cy="0.000993" cf="0.050475" />
+	</Application>
+</Module-CVECLBR>

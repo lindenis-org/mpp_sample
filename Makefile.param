@@ -1,0 +1,33 @@
+# Compiler variables
+export CROSS_COMPILE ?= arm-linux-gnueabi-
+
+export CC := $(CROSS_COMPILE)gcc
+export CXX := $(CROSS_COMPILE)g++
+export STRIP := $(CROSS_COMPILE)strip
+export AR := $(CROSS_COMPILE)ar
+export LD := $(CROSS_COMPILE)ld
+
+COMM_FLAGS := -march=armv7-a -mtune=cortex-a7 -mabi=aapcs-linux \
+	-mfpu=neon-vfpv4 -mfloat-abi=softfp \
+	-D_GNU_SOURCE \
+	-Wall \
+	-fno-exceptions \
+	-ffunction-sections -fdata-sections
+
+CFLAGS := $(COMM_FLAGS) -std=gnu99
+
+CXXFLAGS := $(COMM_FLAGS) -std=c++11 -fno-rtti
+
+LDFLAGS := -Wl,--gc-sections \
+	-lc -lstdc++ -lrt -lpthread -lm -lcrypt
+
+CFLAGS += -DUSE_LOG_LIB_GLOG
+
+Q ?= @
+GDB ?= n
+
+ifeq ($(GDB), y)
+	CFLAGS += -g
+else
+	CFLAGS += -O2
+endif
