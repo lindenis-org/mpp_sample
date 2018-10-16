@@ -16,6 +16,8 @@ int64_t g_last_eve_time = 0;
 int64_t g_last_vo_time = 0;
 int64_t g_exit_flag = 0;
 
+#define DISPALIGN(value, align) ((align==0)?(unsigned long)value:((((unsigned long)value) + ((align) - 1)) & ~((align) - 1)))
+
 typedef struct _UserConfig {
     VirVi_Params   stVirViParams[VirVi_MAX];
     VO_Params      stVOParams;
@@ -145,36 +147,23 @@ static void *VO_Proc(void* pThreadData)
     OSD_Params* pOSDParams = (OSD_Params*)&pUserCfg->stOSDParams;
     assert(pOSDParams != NULL);
 
+    open_g2d_device();
+
     alogd("Start VO_Proc Thread!  mViDev[%d] mViChn[%d]"
           ,pVirViParam->iViDev
           ,pVirViParam->iViChn
          );
 
-    int iPixelSize 		= VI_CAPTURE_WIDTH * VI_CAPTURE_HIGHT;
-    int iFrameSize 		= iPixelSize * 3 / 2;
+    int iPixelSize      = VI_CAPTURE_WIDTH * VI_CAPTURE_HIGHT;
+    int iFrameSize      = iPixelSize * 3 / 2;
 
-    unsigned int u32PhyAddr;
-    void *pVoAddr;
-    AW_MPI_SYS_MmzAlloc_Cached(&u32PhyAddr, &pVoAddr, iFrameSize);
+    pVO_Params->mConfigPara.mPicWidth  = VI_CAPTURE_WIDTH;
+    pVO_Params->mConfigPara.mPicHeight = VI_CAPTURE_HIGHT;
+    pVO_Params->mConfigPara.mPicFormat = MM_PIXEL_FORMAT_YVU_SEMIPLANAR_420;
+    pVO_Params->mConfigPara.mFrameRate = VIDEO_FIELD_FRAME;
 
-    VIDEO_FRAME_INFO_S VFrameInfo;
-    VFrameInfo.mId                  = 0;
-    VFrameInfo.VFrame.mPhyAddr[0]   = u32PhyAddr;
-    VFrameInfo.VFrame.mPhyAddr[1]   = u32PhyAddr + iPixelSize;
-    VFrameInfo.VFrame.mPhyAddr[2]   = u32PhyAddr + iPixelSize + iPixelSize / 4;
-    VFrameInfo.VFrame.mpVirAddr[0]  = pVoAddr;
-    VFrameInfo.VFrame.mpVirAddr[1]  = pVoAddr + iPixelSize;
-    VFrameInfo.VFrame.mpVirAddr[2]  = pVoAddr + iPixelSize + iPixelSize / 4;
-    VFrameInfo.VFrame.mWidth        = VI_CAPTURE_WIDTH;
-    VFrameInfo.VFrame.mHeight       = VI_CAPTURE_HIGHT;
-    VFrameInfo.VFrame.mField        = VIDEO_FIELD_FRAME;
-    VFrameInfo.VFrame.mPixelFormat  = MM_PIXEL_FORMAT_YVU_SEMIPLANAR_420; //TODO:写死nv21
-    VFrameInfo.VFrame.mVideoFormat  = VIDEO_FORMAT_LINEAR;
-    VFrameInfo.VFrame.mCompressMode = COMPRESS_MODE_NONE;
-    VFrameInfo.VFrame.mOffsetTop    = 0;
-    VFrameInfo.VFrame.mOffsetBottom = VI_CAPTURE_HIGHT;
-    VFrameInfo.VFrame.mOffsetLeft   = 0;
-    VFrameInfo.VFrame.mOffsetRight  = VI_CAPTURE_WIDTH;
+    /* init frame manager */
+    initVOFrameManager(&pVO_Params->mFrameManager, 5, &pVO_Params->mConfigPara);
 
     create_osd(pOSDParams);
 
@@ -186,18 +175,15 @@ static void *VO_Proc(void* pThreadData)
     while (iFrameIdx < pVO_Params->iFrameNum) {
         // 获取一帧YUV数据
         VIDEO_FRAME_INFO_S stFrameInfo;
+        VIDEO_FRAME_INFO_S *pFrameInfo;
         if (SUCCESS == AW_MPI_VI_GetFrame(pVirViParam->iViDev, pVirViParam->iViChn, &stFrameInfo, 500)) {
             // 获取VirVi数据成功
-
             g_last_vo_time = stFrameInfo.VFrame.mpts;
 
             // OSD 处理更新
             update_osd(pOSDParams, (void*)&pre_time);
 
-            // 复制数据给VO
-            memcpy(VFrameInfo.VFrame.mpVirAddr[0], stFrameInfo.VFrame.mpVirAddr[0], iPixelSize);
-            memcpy(VFrameInfo.VFrame.mpVirAddr[1], stFrameInfo.VFrame.mpVirAddr[1], iPixelSize/2);
-
+            // 画人脸位置
             pthread_mutex_lock(&g_stResult_lock);
             memset(&eve_result, 0, sizeof(AW_AI_EVE_EVENT_RESULT_S));
             memcpy(&eve_result, &g_stResult, sizeof(AW_AI_EVE_EVENT_RESULT_S));
@@ -212,10 +198,10 @@ static void *VO_Proc(void* pThreadData)
                 int iFaceWidth  = iFaceRight - iFaceLeft;
                 int iFaceHeight = iFaceBottom - iFaceTop;
 
-                DrawRect_Nv21((char *)VFrameInfo.VFrame.mpVirAddr[0]
-                              ,(char *)VFrameInfo.VFrame.mpVirAddr[1]
-                              ,VI_CAPTURE_WIDTH
-                              ,VI_CAPTURE_HIGHT
+                DrawRect_Nv21((char *)stFrameInfo.VFrame.mpVirAddr[0]
+                              ,(char *)stFrameInfo.VFrame.mpVirAddr[1]
+                              ,stFrameInfo.VFrame.mWidth
+                              ,stFrameInfo.VFrame.mHeight
                               ,iFaceLeft
                               ,iFaceTop
                               ,iFaceWidth
@@ -224,10 +210,36 @@ static void *VO_Proc(void* pThreadData)
                              );
             }
 
-            VFrameInfo.VFrame.mpts = nPts;
-            VFrameInfo.VFrame.mpts = stFrameInfo.VFrame.mpts;
+Request_Idle_Frame:
+            /* request idle frame */
+            pFrameInfo = pVO_Params->mFrameManager.PrefetchFirstIdleFrame((void *)&pVO_Params->mFrameManager);
+            if (NULL == pFrameInfo) {
+                alogd("@@@@=== into3");
+
+
+                usleep(10*1000);
+                goto Request_Idle_Frame;
+            }
+
+#if 0
+            rotate_frame(&stFrameInfo, pFrameInfo);
+#else
+            memcpy(pFrameInfo->VFrame.mpVirAddr[0], stFrameInfo.VFrame.mpVirAddr[0], iPixelSize);
+            memcpy(pFrameInfo->VFrame.mpVirAddr[1], stFrameInfo.VFrame.mpVirAddr[1], iPixelSize/2);
+#endif
+            pFrameInfo->VFrame.mpts = nPts;
+            pFrameInfo->VFrame.mpts = stFrameInfo.VFrame.mpts;
             nPts += nFrameInterval;
-            AW_MPI_VO_SendFrame(pVO_Params->iVoLayer, pVO_Params->iVoChn, &VFrameInfo, 0);
+            pVO_Params->mFrameManager.UseFrame(&pVO_Params->mFrameManager, pFrameInfo);
+            AW_MPI_SYS_MmzFlushCache(pFrameInfo->VFrame.mPhyAddr[0] ,
+                                     pFrameInfo->VFrame.mpVirAddr[0],
+                                     pFrameInfo->VFrame.mWidth*pFrameInfo->VFrame.mHeight*3/2
+                                    );
+            int ret = AW_MPI_VO_SendFrame(pVO_Params->iVoLayer, pVO_Params->iVoChn, pFrameInfo, 0);
+            if(ret != SUCCESS) {
+                alogd("impossible, send frameId[%d] fail?", pFrameInfo->mId);
+                pVO_Params->mFrameManager.ReleaseFrame(&pVO_Params->mFrameManager, pFrameInfo->mId);
+            }
 
             alogv("dev = %d  chn = %d  iFrameIdx = %d TimeStamp = %lld"
                   ,pVirViParam->iViDev
@@ -235,8 +247,6 @@ static void *VO_Proc(void* pThreadData)
                   ,iFrameIdx
                   ,stFrameInfo.VFrame.mpts
                  );
-
-            // 释放YUV数据
             AW_MPI_VI_ReleaseFrame(pVirViParam->iViDev, pVirViParam->iViChn, &stFrameInfo);
         } else {
             // 获取VirVi数据失败
@@ -245,9 +255,9 @@ static void *VO_Proc(void* pThreadData)
         }
         iFrameIdx++;
     }
-
-    AW_MPI_SYS_MmzFree(u32PhyAddr, pVoAddr);
+    destroyVOFrameManager(&pVO_Params->mFrameManager);
     destroy_osd(pOSDParams);
+    close_g2d_device();
     return NULL;
 }
 
@@ -284,13 +294,13 @@ static void *VENC_Proc(void* pThreadData)
     pVideoFrame->VFrame.mpVirAddr[1]  = (void *)pVirtAddr + nPixelSize;
     pVideoFrame->VFrame.mPhyAddr[0]   = (unsigned int)uPhyAddr;
     pVideoFrame->VFrame.mPhyAddr[1]   = (unsigned int)uPhyAddr + nPixelSize;
-    pVideoFrame->VFrame.mWidth	      = pVENCParams->srcWidth;
+    pVideoFrame->VFrame.mWidth        = pVENCParams->srcWidth;
     pVideoFrame->VFrame.mHeight       = pVENCParams->srcHeight;
     pVideoFrame->VFrame.mOffsetLeft   = 0;
-    pVideoFrame->VFrame.mOffsetTop	  = 0;
+    pVideoFrame->VFrame.mOffsetTop    = 0;
     pVideoFrame->VFrame.mOffsetRight  = pVideoFrame->VFrame.mOffsetLeft + pVideoFrame->VFrame.mWidth;
     pVideoFrame->VFrame.mOffsetBottom = pVideoFrame->VFrame.mOffsetTop + pVideoFrame->VFrame.mHeight;
-    pVideoFrame->VFrame.mField	      = VIDEO_FIELD_FRAME;
+    pVideoFrame->VFrame.mField        = VIDEO_FIELD_FRAME;
     pVideoFrame->VFrame.mVideoFormat  = VIDEO_FORMAT_LINEAR;
     pVideoFrame->VFrame.mCompressMode = COMPRESS_MODE_NONE;
 
@@ -515,45 +525,45 @@ int sysconfig_init(UserConfig* pUserCfg)
     pUserCfg->stEVEParams.iFrameNum  = TEST_FRAME_NUM;
 
     // Initial VO params
-    pUserCfg->stVOParams.iVoDev	        = 0;
-    pUserCfg->stVOParams.iVoChn	        = 0;
-    pUserCfg->stVOParams.iVoLayer	    = 0;
-    pUserCfg->stVOParams.iMiniGUILayer	= HLAY(2, 0);
+    pUserCfg->stVOParams.iVoDev         = 0;
+    pUserCfg->stVOParams.iVoChn         = 0;
+    pUserCfg->stVOParams.iVoLayer       = 0;
+    pUserCfg->stVOParams.iMiniGUILayer  = HLAY(2, 0);
 #ifndef TRANS_VO_TO_LCD  //HDMI
-    pUserCfg->stVOParams.iDispType		= VO_INTF_HDMI;
-    pUserCfg->stVOParams.iDispSync		= VO_OUTPUT_1080P50;
-    pUserCfg->stVOParams.iWidth 		= VO_HDMI_DISPLAY_WIDTH;
-    pUserCfg->stVOParams.iHeight 		= VO_HDMI_DISPLAY_HIGHT;
+    pUserCfg->stVOParams.iDispType      = VO_INTF_HDMI;
+    pUserCfg->stVOParams.iDispSync      = VO_OUTPUT_1080P50;
+    pUserCfg->stVOParams.iWidth         = VO_HDMI_DISPLAY_WIDTH;
+    pUserCfg->stVOParams.iHeight        = VO_HDMI_DISPLAY_HIGHT;
 #else  //LCD
-    pUserCfg->stVOParams.iDispType		= VO_INTF_LCD;
-    pUserCfg->stVOParams.iDispSync		= VO_OUTPUT_NTSC;
-    pUserCfg->stVOParams.iWidth 		= VO_LCD_DISPLAY_WIDTH;
-    pUserCfg->stVOParams.iHeight 		= VO_LCD_DISPLAY_HIGHT;
+    pUserCfg->stVOParams.iDispType      = VO_INTF_LCD;
+    pUserCfg->stVOParams.iDispSync      = VO_OUTPUT_NTSC;
+    pUserCfg->stVOParams.iWidth         = VO_LCD_DISPLAY_WIDTH;
+    pUserCfg->stVOParams.iHeight        = VO_LCD_DISPLAY_HIGHT;
 #endif
-    pUserCfg->stVOParams.iFrameNum 	    = TEST_FRAME_NUM;
+    pUserCfg->stVOParams.iFrameNum      = TEST_FRAME_NUM;
 
     // Inital VENC params
     pUserCfg->stVENCParams.iFrameNum        = TEST_FRAME_NUM;
     strcpy(pUserCfg->stVENCParams.szOutputFile, "test_out.h264");  //输出文件
-    pUserCfg->stVENCParams.srcWidth		    = VI_CAPTURE_WIDTH;
-    pUserCfg->stVENCParams.srcHeight 		= VI_CAPTURE_HIGHT;
-    pUserCfg->stVENCParams.srcSize		    = VI_CAPTURE_WIDTH;
-    pUserCfg->stVENCParams.srcPixFmt 		= MM_PIXEL_FORMAT_YVU_SEMIPLANAR_420; //NV21
+    pUserCfg->stVENCParams.srcWidth         = VI_CAPTURE_WIDTH;
+    pUserCfg->stVENCParams.srcHeight        = VI_CAPTURE_HIGHT;
+    pUserCfg->stVENCParams.srcSize          = VI_CAPTURE_WIDTH;
+    pUserCfg->stVENCParams.srcPixFmt        = MM_PIXEL_FORMAT_YVU_SEMIPLANAR_420; //NV21
 
-    pUserCfg->stVENCParams.dstWidth  		= VI_CAPTURE_WIDTH;
-    pUserCfg->stVENCParams.dstHeight 		= VI_CAPTURE_HIGHT;
-    pUserCfg->stVENCParams.dstSize		    = VI_CAPTURE_WIDTH;
-    pUserCfg->stVENCParams.dstPixFmt 		= MM_PIXEL_FORMAT_YVU_SEMIPLANAR_420; //NV21
+    pUserCfg->stVENCParams.dstWidth         = VI_CAPTURE_WIDTH;
+    pUserCfg->stVENCParams.dstHeight        = VI_CAPTURE_HIGHT;
+    pUserCfg->stVENCParams.dstSize          = VI_CAPTURE_WIDTH;
+    pUserCfg->stVENCParams.dstPixFmt        = MM_PIXEL_FORMAT_YVU_SEMIPLANAR_420; //NV21
 
     pUserCfg->stVENCParams.mVideoEncoderFmt = PT_H264; // PT_H265  PT_MJPEG   TODO:此处不应配置此参数
-    pUserCfg->stVENCParams.mField 		    = VIDEO_FIELD_FRAME;
-    pUserCfg->stVENCParams.mVideoBitRate 	= 4 * 1024 * 1024;
+    pUserCfg->stVENCParams.mField           = VIDEO_FIELD_FRAME;
+    pUserCfg->stVENCParams.mVideoBitRate    = 4 * 1024 * 1024;
     pUserCfg->stVENCParams.mVideoFrameRate  = 30;
-    pUserCfg->stVENCParams.maxKeyFrame 	    = 20;
+    pUserCfg->stVENCParams.maxKeyFrame      = 20;
 
     pUserCfg->stVENCParams.mEncUseProfile   = 2; // profile 0-low 1-mid 2-high
-    pUserCfg->stVENCParams.mRcMode 		    = 0; // rc_mode
-    pUserCfg->stVENCParams.rotate 		    = ROTATE_NONE; // ROTATE_90 ROTATE_180 ROTATE_270
+    pUserCfg->stVENCParams.mRcMode          = 0; // rc_mode
+    pUserCfg->stVENCParams.rotate           = ROTATE_NONE; // ROTATE_90 ROTATE_180 ROTATE_270
 
     // Inital OSD params
     pUserCfg->stOSDParams.mOverlayHandle  = 0;

@@ -32,9 +32,12 @@ typedef struct SampleISEGroupConfig {
     int Lens_Parameter_Cx;
     int Lens_Parameter_Cy;
     MOUNT_Type_MO Mount_Mode;
-    int normal_pan;
-    int normal_tilt;
-    int normal_zoom;
+    float normal_pan;
+    float normal_tilt;
+    float normal_zoom;
+    float ptz4in1_pan[4];
+    float ptz4in1_tilt[4];
+    float ptz4in1_zoom[4];
 } SampleISEGroupConfig;
 
 typedef struct SampleISEPortConfig {

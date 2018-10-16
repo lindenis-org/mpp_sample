@@ -337,8 +337,8 @@ static int vo_create(void)
     VO_DEV_TYPE_E vo_type;
     VO_DEV_CFG_S  vo_cfg;
     vo_type           = VO_DEV_LCD;
-    vo_cfg.res_width  = 720;
-    vo_cfg.res_height = 1280;
+    vo_cfg.res_width  = 1920;
+    vo_cfg.res_height = 1080;
     ret = mpp_comm_vo_dev_create(vo_type, &vo_cfg);
     if (ret) {
         ERR_PRT("Do mpp_comm_vo_dev_create fail! ret:%d  vo_type:%d\n", ret, vo_type);
@@ -348,8 +348,8 @@ static int vo_create(void)
     VO_CHN_CFG_S vo_chn_cfg;
     vo_chn_cfg.top        = 0;
     vo_chn_cfg.left       = 0;
-    vo_chn_cfg.width      = 720;
-    vo_chn_cfg.height     = 1280;
+    vo_chn_cfg.width      = 1920;
+    vo_chn_cfg.height     = 1080;
     vo_chn_cfg.vo_buf_num = 0;
     ret = mpp_comm_vo_chn_create(VO_CHN_0, &vo_chn_cfg);
     if (ret) {

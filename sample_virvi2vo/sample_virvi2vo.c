@@ -184,19 +184,112 @@ static ERRORTYPE loadSampleVIRVI2VOConfig(SampleVIRVI2VOConfig *pConfig, const c
     destroyConfParser(&stConfParser);
     return SUCCESS;
 }
+typedef struct {
+    int ae_mode;
+    int ae_expOffset;
+    int ae_exposure;
+    int gain;
+    int awb_mode;
+    int awb_coltmp;
+    int brightness;
+    int contrast;
+    int saturation;
+    int hue;
+    unsigned int maxexp;
+    unsigned int minexp;
+    int sharpness;
+} Test_IspParam_S;
 
+Test_IspParam_S param = {0};
 void handle_exit(int signo)
 {
     alogd("user want to exit!");
+    FILE *isp_fp = NULL;
+    isp_fp = fopen("./isp_config.txt","w");
+    if(isp_fp == NULL) {
+        printf("open isp config file error!\n");
+    } else {
+        fprintf(isp_fp, "ae_mode=%d\n", param.ae_mode);
+        fprintf(isp_fp, "ae_expOffset=%d\n", param.ae_expOffset);
+        fprintf(isp_fp, "ae_exposure=%d\n", param.ae_exposure);
+        fprintf(isp_fp, "gain=%d\n", param.gain);
+        fprintf(isp_fp, "awb_mode=%d\n", param.awb_mode);
+        fprintf(isp_fp, "awb_coltmp=%d\n", param.awb_coltmp);
+        fprintf(isp_fp, "brightness=%d\n", param.brightness);
+        fprintf(isp_fp, "contrast=%d\n", param.contrast);
+        fprintf(isp_fp, "saturation=%d\n", param.saturation);
+        fprintf(isp_fp, "hue=%d\n", param.hue);
+        fprintf(isp_fp, "maxexp=%d\n", param.maxexp);
+        fprintf(isp_fp, "minexp=%d\n", param.minexp);
+        fprintf(isp_fp, "sharpness=%d\n", param.sharpness);
+
+        fclose(isp_fp);
+    }
+
     if(NULL != pSampleVIRVI2VOContext) {
         cdx_sem_up(&pSampleVIRVI2VOContext->mSemExit);
     }
+}
+
+
+
+
+void print_menu(void)
+{
+    printf("\n---------------------\n");
+    printf("Please input the num to config ISp \n");
+    printf("\t num 1 is the AE_mode\n\t num 2 is the AE_expOffset\n\t num 3 is the AE_exposure\n\t num 4 is the gain\n\t num 5 is AWB_MODE\n\t num 6 is GetColorTemp\n\t num 7 is AE Max Exp\n\t num 8 is AE Min Exp\n\t num 9 is HUE\n\t num 10 is the Brightness\n\t num 11 is the contrast\n\t num 12 is sattuation\n\t num 13 is Sharpness\n\t num 99 is quit\n");
+    printf("\n---------------------\n");
+
 }
 
 int main(int argc __attribute__((__unused__)), char *argv[] __attribute__((__unused__)))
 {
     int result = 0;
     int iIspDev;
+    //Test_IspParam_S param = {0};
+    FILE *fp = fopen("isp_congfig.txt", "r");
+    if (NULL != fp) {
+        //遍历参数文件
+        char text[1024];
+        while (fgets(text, 1024, fp)) {
+            //解析参数
+            char *chr = strchr(text, '=');
+            if (NULL == chr)
+                continue;
+
+            *chr++ = '\0';
+            if (0 == strcmp(text, "ae_mode"))
+                param.ae_mode = atoi(chr);
+            else if (0 == strcmp(text, "ae_expOffset"))
+                param.ae_expOffset = atoi(chr);
+            else if (0 == strcmp(text, "ae_exposure"))
+                param.ae_exposure = atoi(chr);
+            else if (0 == strcmp(text, "gain"))
+                param.gain = atoi(chr);
+            else if (0 == strcmp(text, "awb_mode"))
+                param.awb_mode = atoi(chr);
+            else if (0 == strcmp(text, "awb_coltmp"))
+                param.awb_coltmp = atoi(chr);
+            else if (0 == strcmp(text, "brightness"))
+                param.brightness = atoi(chr);
+            else if (0 == strcmp(text, "contrast"))
+                param.contrast = atoi(chr);
+            else if (0 == strcmp(text, "saturation"))
+                param.saturation = atoi(chr);
+            else if (0 == strcmp(text, "maxexp"))
+                param.maxexp = atoi(chr);
+            else if (0 == strcmp(text, "minexp"))
+                param.minexp = atoi(chr);
+            else if (0 == strcmp(text, "hue"))
+                param.hue = atoi(chr);
+            else if (0 == strcmp(text, "sharpness"))
+                param.sharpness = atoi(chr);
+        }
+        fclose(fp);
+    }
+
+
 
     SampleVIRVI2VOContext stContext;
 
@@ -288,9 +381,8 @@ int main(int argc __attribute__((__unused__)), char *argv[] __attribute__((__unu
     }
     AW_MPI_ISP_Init();
     AW_MPI_ISP_Run(iIspDev);
-    AW_MPI_ISP_SetMirror(stContext.mVIDev,0);//0,1
-    // AW_MPI_ISP_SetFlip(2,0);//0,1
-    // AW_MPI_ISP_SetFlip(2,1);//0,1
+    AW_MPI_VI_SetVippMirror(stContext.mVIDev,0);//0,1
+    AW_MPI_VI_SetVippFlip(stContext.mVIDev,0);//0,1
 #endif
     eRet = AW_MPI_VI_CreateVirChn(stContext.mVIDev, stContext.mVIChn, NULL);
     if(eRet != SUCCESS) {
@@ -313,13 +405,11 @@ int main(int argc __attribute__((__unused__)), char *argv[] __attribute__((__unu
         aloge("fatal error! enable video layer fail!");
     }
 
-#if 1
     VO_PUB_ATTR_S spPubAttr;
     AW_MPI_VO_GetPubAttr(stContext.mVoDev, &spPubAttr);
     spPubAttr.enIntfType = stContext.mConfigPara.mDispType;
     spPubAttr.enIntfSync = stContext.mConfigPara.mDispSync;
     AW_MPI_VO_SetPubAttr(stContext.mVoDev, &spPubAttr);
-#endif
 
     stContext.mVoLayer = hlay0;
     AW_MPI_VO_GetVideoLayerAttr(stContext.mVoLayer, &stContext.mLayerAttr);
@@ -378,16 +468,19 @@ int main(int argc __attribute__((__unused__)), char *argv[] __attribute__((__unu
 
 #if 1
     char str[256]  = {0};
+    char val[16] = {0};
     int num = 0, vl = 0;
 
     printf("\033[33m");
     printf("===========ISP test=========\n");
     printf("input <99> & ctrl+c to exit!\n");
-    printf("input <1-12> to test\n");
+    printf("input <1-13> to test\n");
     printf("============================\n");
     printf("\033[0m");
     while (1) {
+        print_menu();
         memset(str, 0, sizeof(str));
+        memset(val,0,sizeof(val));
         fgets(str, 256, stdin);
         num = atoi(str);
         if (99 == num) {
@@ -397,57 +490,122 @@ int main(int argc __attribute__((__unused__)), char *argv[] __attribute__((__unu
         }
 
         switch (num) {
-        case 1:
-            AW_MPI_ISP_AE_SetMode(iIspDev,0);//0 ,1---ok
+        case 1://///////
             AW_MPI_ISP_AE_GetMode(iIspDev,&vl);
-            printf("AE mode: current value = %d.\r\n", vl);
+            printf("\n---------------AE set mode---the current AE mode = %d\n",vl);
+            fgets(val,16,stdin);
+            param.ae_mode = atoi(val);
+            AW_MPI_ISP_AE_SetMode(iIspDev,param.ae_mode);//0 ,1---ok
+            AW_MPI_ISP_AE_GetMode(iIspDev,&vl);
+            printf("AE mode: after setting  value = %d\r\n", vl);
             break;
         case 2:
-            AW_MPI_ISP_AE_SetExposureBias(iIspDev,4);//0~8---ok
             AW_MPI_ISP_AE_GetExposureBias(iIspDev,&vl);
-            printf("AE exposure bias: current value = %d.\r\n", vl);
+            printf("\n---------------AE set expOffset---the current AE expOffset bias = %d\n",vl);
+            fgets(val,16,stdin);
+            param.ae_expOffset = atoi(val);
+            AW_MPI_ISP_AE_SetExposureBias(iIspDev,param.ae_expOffset);//0~8---ok
+            AW_MPI_ISP_AE_GetExposureBias(iIspDev,&vl);
+            printf("AE exposure bias: after setting  value = %d\r\n", vl);
             break;
-        case 3:
-            AW_MPI_ISP_AE_SetExposure(iIspDev,1000);//
+        case 3://////
+            AW_MPI_ISP_AE_GetExposure(iIspDev,&vl);
+            printf("\n---------------AE set exposure---the current AE exposure = %d\n",vl);
+            fgets(val,16,stdin);
+            param.ae_exposure = atoi(val);
+            AW_MPI_ISP_AE_SetExposure(iIspDev,param.ae_exposure);//
             AW_MPI_ISP_AE_GetExposure(iIspDev,&vl);//
-            printf("AE exposure: current value = %d.\r\n", vl);
+            printf("AE exposure: after setting value = %d\r\n", vl);
             break;
-        case 4:
-            AW_MPI_ISP_AE_SetGain(iIspDev,256);//256
+        case 4://///////
+            AW_MPI_ISP_AE_GetGain(iIspDev,&vl);
+            printf("\n---------------AE set gain---the current AE gain  = %d\n",vl);
+            fgets(val,16,stdin);
+            param.gain = atoi(val);
+            AW_MPI_ISP_AE_SetGain(iIspDev,param.gain );//256
             AW_MPI_ISP_AE_GetGain(iIspDev,&vl);//256
-            printf("AE gain: current value = %d.\r\n", vl);
+            printf("AE gain: after setting value = %d\r\n", vl);
             break;
         case 5:
-            AW_MPI_ISP_AWB_SetMode(iIspDev,0);//0,1---ok
+            AW_MPI_ISP_AWB_GetMode(iIspDev,&vl);
+            printf("\n---------------AWB  mode---the current AWB mode  = %d\n",vl);
+            fgets(val,16,stdin);
+            param.awb_mode = atoi(val);
+            AW_MPI_ISP_AWB_SetMode(iIspDev,param.awb_mode);//0,1---ok
             AW_MPI_ISP_AWB_GetMode(iIspDev,&vl);//0,1
-            printf("AWB mode: current value = %d.\r\n", vl);
+            printf("AWB mode: after setting value = %d\r\n", vl);
             break;
         case 6:
-            AW_MPI_ISP_AWB_SetColorTemp(iIspDev,4);//0,1,2,3,4,5,6,7, ---ok
+            AW_MPI_ISP_AWB_GetColorTemp(iIspDev,&vl);
+            printf("\n---------------AWB  clolor temperature---the current AWB clolor temperature  = %d\n",vl);
+            fgets(val,16,stdin);
+            param.awb_coltmp = atoi(val);
+            AW_MPI_ISP_AWB_SetColorTemp(iIspDev,param.awb_coltmp);//0,1,2,3,4,5,6,7, ---ok
             AW_MPI_ISP_AWB_GetColorTemp(iIspDev,&vl);//0,1,2,3,4,5,6,7,
-            printf("AWB clolor temperature: current value = %d.\r\n", vl);
+            printf("AWB clolor temperature: after setting value = %d\r\n", vl);
             break;
         case 7:
+            AW_MPI_ISP_GetAeMinMaxExp(iIspDev, &param.minexp, &param.maxexp);
+            printf("\n---------------AE Max Exp---the current AE Max Exp  = %d\n",param.maxexp);
+            fgets(val,16,stdin);
+            param.maxexp = atoi(val);
+            AW_MPI_ISP_SetAeMinMaxExp(iIspDev, param.minexp, param.maxexp);//
+            AW_MPI_ISP_GetAeMinMaxExp(iIspDev, &param.minexp, &param.maxexp);//
+            printf("AeMaxExp: after setting MAx value = %d.\r\n", param.maxexp);
+            break;
         case 8:
+            AW_MPI_ISP_GetAeMinMaxExp(iIspDev, &param.minexp, &param.maxexp);
+            printf("\n---------------AE Min Exp---the current AE Min Exp  = %d\n",param.minexp);
+            fgets(val,16,stdin);
+            param.minexp = atoi(val);
+            AW_MPI_ISP_SetAeMinMaxExp(iIspDev, param.minexp, param.maxexp);//
+            AW_MPI_ISP_GetAeMinMaxExp(iIspDev, &param.minexp, &param.maxexp);//
+            printf("AeMinExp: after setting MIN value = %d.\r\n", param.minexp);
+            break;
         case 9:
-            AW_MPI_ISP_SetBrightness(iIspDev,100);//0~256
-            AW_MPI_ISP_GetBrightness(iIspDev,&vl);//0~256
-            printf("brightness: current value = %d.\r\n", vl);
+            AW_MPI_ISP_GetHue(iIspDev,&vl);
+            printf("\n---------------HUE  VALUE---the current HUE  VALUE  = %d\n",vl);
+            fgets(val,16,stdin);
+            param.hue = atoi(val);
+            AW_MPI_ISP_SetHue(iIspDev,param.hue);//
+            AW_MPI_ISP_GetHue(iIspDev,&vl);//
+            printf("HUE: after setting value = %d\r\n", vl);
             break;
         case 10:
-            AW_MPI_ISP_SetContrast(iIspDev,100);//0~256
-            AW_MPI_ISP_GetContrast(iIspDev,&vl);//0~256
-            printf("contrast: current value = %d.\r\n", vl);
+            AW_MPI_ISP_GetBrightness(iIspDev,&vl);
+            printf("\n---------------brightness  VALUE---the current brightness  value  = %d\n",vl);
+            fgets(val,16,stdin);
+            param.brightness = atoi(val);
+            AW_MPI_ISP_SetBrightness(iIspDev,param.brightness);//0~256
+            AW_MPI_ISP_GetBrightness(iIspDev,&vl);//0~256
+            printf("brightness: after setting value = %d\r\n", vl);
             break;
         case 11:
-            AW_MPI_ISP_SetSaturation(iIspDev,100);//0~256
-            AW_MPI_ISP_GetSaturation(iIspDev,&vl);//0~256
-            printf("saturation: current value = %d.\r\n", vl);
+            AW_MPI_ISP_GetContrast(iIspDev,&vl);
+            printf("\n---------------contrast  VALUE---the current contrast  value  = %d\n",vl);
+            fgets(val,16,stdin);
+            param.contrast = atoi(val);
+            AW_MPI_ISP_SetContrast(iIspDev,param.contrast);//0~256
+            AW_MPI_ISP_GetContrast(iIspDev,&vl);//0~256
+            printf("contrast: after setting value = %d\r\n", vl);
             break;
         case 12:
-            AW_MPI_ISP_SetSharpness(iIspDev,100);//0~256
+            AW_MPI_ISP_GetSaturation(iIspDev,&vl);
+            printf("\n---------------saturation  VALUE---the current saturation  value  = %d\n",vl);
+            fgets(val,16,stdin);
+            param.saturation = atoi(val);
+            AW_MPI_ISP_SetSaturation(iIspDev,param.saturation);//0~256
+            AW_MPI_ISP_GetSaturation(iIspDev,&vl);//0~256
+            printf("saturation: after setting value = %d\r\n", vl);
+            break;
+        case 13:
+            AW_MPI_ISP_GetSharpness(iIspDev,&vl);
+            printf("\n---------------sharpness  VALUE---the current sharpness  value  = %d\n",vl);
+            fgets(val,16,stdin);
+            param.sharpness = atoi(val);
+            AW_MPI_ISP_SetSharpness(iIspDev,param.sharpness);//0~256
             AW_MPI_ISP_GetSharpness(iIspDev,&vl);//0~256
-            printf("sharpness: current value = %d.\r\n", vl);
+            printf("sharpness: after setting value = %d\r\n", vl);
             break;
         default:
             printf("intput error.\r\n");

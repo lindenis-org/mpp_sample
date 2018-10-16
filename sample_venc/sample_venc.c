@@ -602,6 +602,8 @@ static ERRORTYPE loadConfigPara(SAMPLE_VENC_PARA_S *pVencPara, char *conf_path)
     pVencPara->mConfigPara.mVideoFrameRate = GetConfParaInt(&mConf, VENC_CFG_DST_FRAMERATE, 0);
     pVencPara->mConfigPara.mVideoBitRate = GetConfParaInt(&mConf, VENC_CFG_DST_BITRATE, 0);
     pVencPara->mConfigPara.mRcMode = GetConfParaInt(&mConf, VENC_CFG_RC_MODE, 0);
+    pVencPara->mConfigPara.mQp0 = GetConfParaInt(&mConf, VENC_CFG_QP0, 10);
+    pVencPara->mConfigPara.mQp1 = GetConfParaInt(&mConf, VENC_CFG_QP1, 40);
     int rotate = GetConfParaInt(&mConf, VENC_CFG_ROTATE, 0);
     if (0 == rotate) {
         pVencPara->mConfigPara.rotate = ROTATE_NONE;
@@ -737,13 +739,13 @@ static ERRORTYPE configVencChnAttr(SAMPLE_VENC_PARA_S *pVencPara)
         switch (pVencPara->mConfigPara.mRcMode) {
         case 1:
             pVencPara->mVencChnAttr.RcAttr.mRcMode = VENC_RC_MODE_H264VBR;
-            pVencPara->mVencChnAttr.RcAttr.mAttrH264Vbr.mMinQp = 10;
-            pVencPara->mVencChnAttr.RcAttr.mAttrH264Vbr.mMaxQp = 40;
+            pVencPara->mVencChnAttr.RcAttr.mAttrH264Vbr.mMinQp = pVencPara->mConfigPara.mQp0; //10;
+            pVencPara->mVencChnAttr.RcAttr.mAttrH264Vbr.mMaxQp = pVencPara->mConfigPara.mQp1; //40;
             break;
         case 2:
             pVencPara->mVencChnAttr.RcAttr.mRcMode = VENC_RC_MODE_H264FIXQP;
-            pVencPara->mVencChnAttr.RcAttr.mAttrH264FixQp.mIQp = 35;
-            pVencPara->mVencChnAttr.RcAttr.mAttrH264FixQp.mPQp = 35;
+            pVencPara->mVencChnAttr.RcAttr.mAttrH264FixQp.mIQp = pVencPara->mConfigPara.mQp0;//35;
+            pVencPara->mVencChnAttr.RcAttr.mAttrH264FixQp.mPQp = pVencPara->mConfigPara.mQp1;//35;
             break;
         case 3:
             pVencPara->mVencChnAttr.RcAttr.mRcMode = VENC_RC_MODE_H264QPMAP;
@@ -754,6 +756,8 @@ static ERRORTYPE configVencChnAttr(SAMPLE_VENC_PARA_S *pVencPara)
             pVencPara->mVencChnAttr.RcAttr.mAttrH264Cbr.mSrcFrmRate = pVencPara->mConfigPara.mVideoFrameRate;
             pVencPara->mVencChnAttr.RcAttr.mAttrH264Cbr.fr32DstFrmRate = pVencPara->mConfigPara.mVideoFrameRate;
             pVencPara->mVencChnAttr.RcAttr.mAttrH264Cbr.mBitRate = pVencPara->mConfigPara.mVideoBitRate;
+            pVencPara->mVencChnAttr.RcAttr.mAttrH264Cbr.mMinQp = pVencPara->mConfigPara.mQp0;
+            pVencPara->mVencChnAttr.RcAttr.mAttrH264Cbr.mMaxQp = pVencPara->mConfigPara.mQp1;
             break;
         }
     } else if (PT_H265 == pVencPara->mVencChnAttr.VeAttr.Type) {
@@ -764,13 +768,13 @@ static ERRORTYPE configVencChnAttr(SAMPLE_VENC_PARA_S *pVencPara)
         switch (pVencPara->mConfigPara.mRcMode) {
         case 1:
             pVencPara->mVencChnAttr.RcAttr.mRcMode = VENC_RC_MODE_H265VBR;
-            pVencPara->mVencChnAttr.RcAttr.mAttrH265Vbr.mMinQp = 10;
-            pVencPara->mVencChnAttr.RcAttr.mAttrH265Vbr.mMaxQp = 40;
+            pVencPara->mVencChnAttr.RcAttr.mAttrH265Vbr.mMinQp = pVencPara->mConfigPara.mQp0; //10;
+            pVencPara->mVencChnAttr.RcAttr.mAttrH265Vbr.mMaxQp = pVencPara->mConfigPara.mQp1; //40;
             break;
         case 2:
             pVencPara->mVencChnAttr.RcAttr.mRcMode = VENC_RC_MODE_H265FIXQP;
-            pVencPara->mVencChnAttr.RcAttr.mAttrH265FixQp.mIQp = 35;
-            pVencPara->mVencChnAttr.RcAttr.mAttrH265FixQp.mPQp = 35;
+            pVencPara->mVencChnAttr.RcAttr.mAttrH265FixQp.mIQp = pVencPara->mConfigPara.mQp0; //35;
+            pVencPara->mVencChnAttr.RcAttr.mAttrH265FixQp.mPQp = pVencPara->mConfigPara.mQp1; //35;
             break;
         case 3:
             pVencPara->mVencChnAttr.RcAttr.mRcMode = VENC_RC_MODE_H265QPMAP;
@@ -781,6 +785,8 @@ static ERRORTYPE configVencChnAttr(SAMPLE_VENC_PARA_S *pVencPara)
             pVencPara->mVencChnAttr.RcAttr.mAttrH265Cbr.mSrcFrmRate = pVencPara->mConfigPara.mVideoFrameRate;
             pVencPara->mVencChnAttr.RcAttr.mAttrH265Cbr.fr32DstFrmRate = pVencPara->mConfigPara.mVideoFrameRate;
             pVencPara->mVencChnAttr.RcAttr.mAttrH265Cbr.mBitRate = pVencPara->mConfigPara.mVideoBitRate;
+            pVencPara->mVencChnAttr.RcAttr.mAttrH265Cbr.mMinQp = pVencPara->mConfigPara.mQp0;
+            pVencPara->mVencChnAttr.RcAttr.mAttrH265Cbr.mMaxQp = pVencPara->mConfigPara.mQp1;
             break;
         }
     } else if (PT_MJPEG == pVencPara->mVencChnAttr.VeAttr.Type) {
@@ -824,6 +830,13 @@ static ERRORTYPE createVencChn(SAMPLE_VENC_PARA_S *pVencPara)
         VENC_FRAME_RATE_S stFrameRate;
         stFrameRate.SrcFrmRate = stFrameRate.DstFrmRate = pVencPara->mConfigPara.mVideoFrameRate;
         AW_MPI_VENC_SetFrameRate(pVencPara->mVeChn, &stFrameRate);
+
+        if (PT_MJPEG == pVencPara->mVencChnAttr.VeAttr.Type) {
+            VENC_PARAM_JPEG_S stJpegParam;
+            memset(&stJpegParam, 0, sizeof(VENC_PARAM_JPEG_S));
+            stJpegParam.Qfactor = pVencPara->mConfigPara.mQp0;
+            AW_MPI_VENC_SetJpegParam(pVencPara->mVeChn, &stJpegParam);
+        }
 
         MPPCallbackInfo cbInfo;
         cbInfo.cookie = (void*)pVencPara;

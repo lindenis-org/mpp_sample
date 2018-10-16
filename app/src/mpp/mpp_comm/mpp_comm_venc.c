@@ -143,6 +143,22 @@ static VENC_CFG_S g_cfg_1080p_to_1080p_8M_30fps = {
     .min_qp         = 10,
 };
 
+static VENC_CFG_S g_cfg_1080p_to_1080p_8M_25fps = {
+    .src_width      = 1920,
+    .src_height     = 1080,
+    .dst_width      = 1920,
+    .dst_height     = 1080,
+    .src_fps        = 25,
+    .dst_fps        = 25,
+    .bitrate        = 8*1000*1000,
+    .gop            = 30,
+    .is_by_frame    = 1,
+    .field          = VIDEO_FIELD_FRAME,
+    .pixel_format   = MM_PIXEL_FORMAT_YVU_SEMIPLANAR_420,
+    .max_qp         = 40,
+    .min_qp         = 10,
+};
+
 static VENC_CFG_S g_cfg_1080p_to_720p_4M_30fps = {
     .src_width      = 1920,
     .src_height     = 1080,
@@ -427,6 +443,9 @@ int mpp_comm_venc_get_cfg(VENC_CFG_TYPE_E venc_type, VENC_CFG_S *p_venc_cfg)
         break;
     case VENC_1080P_TO_1080P_8M_30FPS:
         memcpy(p_venc_cfg, &g_cfg_1080p_to_1080p_8M_30fps, sizeof(VENC_CFG_S));
+        break;
+    case VENC_1080P_TO_1080P_8M_25FPS:
+        memcpy(p_venc_cfg, &g_cfg_1080p_to_1080p_8M_25fps, sizeof(VENC_CFG_S));
         break;
     case VENC_1080P_TO_720P_4M_30FPS:
         memcpy(p_venc_cfg, &g_cfg_1080p_to_720p_4M_30fps, sizeof(VENC_CFG_S));

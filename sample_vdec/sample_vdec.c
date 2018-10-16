@@ -102,6 +102,15 @@ static ERRORTYPE loadSampleVDecConfig(SampleVDecConfig *pConfig, const char *con
         strncpy(pConfig->mH264LenPath, ptr, MAX_FILE_PATH_SIZE-1);
 
         pConfig->mType = PT_H264;
+    } else if (strcmp(ptr, "h265") == 0) {
+        //vbs file keep naked stream(sps+pps+idr+p). len file keep every stream size.
+        ptr = (char*)GetConfParaString(&stConfParser, SAMPLE_VDEC_H265_VBS_PATH, NULL);
+        strncpy(pConfig->mH265VbsPath, ptr, MAX_FILE_PATH_SIZE-1);
+
+        ptr = (char*)GetConfParaString(&stConfParser, SAMPLE_VDEC_H265_LEN_PATH, NULL);
+        strncpy(pConfig->mH265LenPath, ptr, MAX_FILE_PATH_SIZE-1);
+
+        pConfig->mType = PT_H265;
     } else {
         aloge("fatal error! why not appoint vencoder type?! exit program!");
         exit(-1);
@@ -117,11 +126,11 @@ static ERRORTYPE loadSampleVDecConfig(SampleVDecConfig *pConfig, const char *con
 int main(int argc, char *argv[])
 {
     int result = 0;
-    alogd("Hello, sample_vdec! func: decode jpg to yuv!");
+    alogd("Hello, sample_vdec! func: decode h264/h265/jpeg to yuv!");
     SampleVDecContext stContext;
 
     //parse command line param
-    if(ParseCmdLine(argc, argv, &stContext.mCmdLinePara) != 0) {
+    if (ParseCmdLine(argc, argv, &stContext.mCmdLinePara) != 0) {
         //aloge("fatal error! command line param is wrong, exit!");
         result = -1;
         goto _exit;
@@ -134,30 +143,31 @@ int main(int argc, char *argv[])
     }
 
     //parse config file.
-    if(loadSampleVDecConfig(&stContext.mConfigPara, pConfigFilePath) != SUCCESS) {
+    if (loadSampleVDecConfig(&stContext.mConfigPara, pConfigFilePath) != SUCCESS) {
         aloge("fatal error! no config file or parse conf file fail");
         result = -1;
         goto _exit;
     }
 
     //init mpp system
+    memset(&stContext.mSysConf, 0, sizeof(MPP_SYS_CONF_S));
     stContext.mSysConf.nAlignWidth = 32;
     AW_MPI_SYS_SetConf(&stContext.mSysConf);
     AW_MPI_SYS_Init();
 
     //config vdec chn attr.
     memset(&stContext.mVDecAttr, 0, sizeof(stContext.mVDecAttr));
-    stContext.mVDecAttr.mType = stContext.mConfigPara.mType;
+    stContext.mVDecAttr.mType      = stContext.mConfigPara.mType;
     stContext.mVDecAttr.mOutputPixelFormat = MM_PIXEL_FORMAT_YVU_SEMIPLANAR_420;
-    stContext.mVDecAttr.mBufSize = 2048*1024;
-    stContext.mVDecAttr.mPicWidth = 1092;
+    stContext.mVDecAttr.mBufSize   = 2048*1024;
+    stContext.mVDecAttr.mPicWidth  = 1920;
     stContext.mVDecAttr.mPicHeight = 1088;
 
     //create vdec channel.
     ERRORTYPE ret;
     BOOL bSuccessFlag = FALSE;
     stContext.mVDecChn = 0;
-    while(stContext.mVDecChn < VDEC_MAX_CHN_NUM) {
+    while (stContext.mVDecChn < VDEC_MAX_CHN_NUM) {
         ret = AW_MPI_VDEC_CreateChn(stContext.mVDecChn, &stContext.mVDecAttr);
         if(SUCCESS == ret) {
             bSuccessFlag = TRUE;
@@ -171,7 +181,7 @@ int main(int argc, char *argv[])
             break;
         }
     }
-    if(FALSE == bSuccessFlag) {
+    if (FALSE == bSuccessFlag) {
         stContext.mVDecChn = MM_INVALID_CHN;
         aloge("fatal error! create VDec channel fail!");
     }
@@ -247,26 +257,35 @@ int main(int argc, char *argv[])
         FILE *fp_bs = fopen(stContext.mConfigPara.mH264VbsPath, "rb");
         FILE *fp_sz = fopen(stContext.mConfigPara.mH264LenPath, "rb");
         if ((fp_bs==NULL) || (fp_sz==NULL)) {
-            aloge("fopen fail! fp: %p, sz: %p", fp_bs, fp_sz);
+            aloge("fopen fail! BitStreamFile: %p, LenFile: %p", fp_bs, fp_sz);
             return -1;
+        }
+        fseek(fp_sz, 0, SEEK_END);
+        int nLenFileSize = ftell(fp_sz);
+        fseek(fp_sz, 0, SEEK_SET);
+        char *pLenStr = malloc(nLenFileSize);
+        fread(pLenStr, 1, nLenFileSize, fp_sz);
+        char *endptr0 =  pLenStr, *endptr1 = pLenStr + nLenFileSize;
+
+        sprintf(DstPath, "%sh264.yuv", stContext.mConfigPara.mYuvFilePath);
+        stContext.mFpDstFile = fopen(DstPath, "wb");
+        if (stContext.mFpDstFile == NULL) {
+            aloge("fatal error! Can't create file %s", DstPath);
+            exit(-1);
         }
 
         while(1) {
-            char buf[64] = {0};
             int pkt_sz;
-            int rd_cnt = fread(buf, 1, 8, fp_sz);
-            if (rd_cnt != 8) {
-                alogw("rd_cnt=%d, maybe find eof!", rd_cnt);
-            }
-
-            if ((pkt_sz=atoi(buf)) == 0) {
-                alogw("pkt_sz=%d, find last pkt, exit loop!");
-                break;
+            pkt_sz = strtol(endptr0, &endptr1, 10);
+            endptr0 += 8;//endptr1;
+            if (pkt_sz && yuvId <= 20) {
+                alogd("yuvId=%d, pkt_sz=%d", yuvId++, pkt_sz);
             } else {
-                alogd("yuvId=%d, pkt_sz=%d", yuvId, pkt_sz);
+                alogw("pkt_sz=0 or yuvId big enough, exit loop!");
+                break;
             }
 
-            rd_cnt = fread(nStreamInfo.pAddr, 1, pkt_sz, fp_bs);
+            int rd_cnt = fread(nStreamInfo.pAddr, 1, pkt_sz, fp_bs);
             if (rd_cnt != pkt_sz) {
                 aloge("error happen! pkt_sz=%d, rd_cnt=%d", pkt_sz, rd_cnt);
                 break;
@@ -287,12 +306,12 @@ __TryToSendStream:
 __TryToGetFrame:
             //get frame from vdec
             if ((ret=AW_MPI_VDEC_GetImage(stContext.mVDecChn, &nFrameInfo, 1000)) == SUCCESS) {
-                sprintf(DstPath, "%s%02d_%d_%d.yuv", stContext.mConfigPara.mYuvFilePath, yuvId++, nFrameInfo.VFrame.mWidth, nFrameInfo.VFrame.mHeight);
+                //sprintf(DstPath, "%s%02d_%d_%d.yuv", stContext.mConfigPara.mYuvFilePath, yuvId++, nFrameInfo.VFrame.mWidth, nFrameInfo.VFrame.mHeight);
                 //open yuv file
-                stContext.mFpDstFile = fopen(DstPath, "wb");
+                //stContext.mFpDstFile = fopen(DstPath, "wb");
                 fwrite(nFrameInfo.VFrame.mpVirAddr[0], 1, nFrameInfo.VFrame.mWidth*nFrameInfo.VFrame.mHeight, stContext.mFpDstFile);
                 fwrite(nFrameInfo.VFrame.mpVirAddr[1], 1, nFrameInfo.VFrame.mWidth*nFrameInfo.VFrame.mHeight/2, stContext.mFpDstFile);
-                fclose(stContext.mFpDstFile);
+                //fclose(stContext.mFpDstFile);
                 AW_MPI_VDEC_ReleaseImage(stContext.mVDecChn, &nFrameInfo);
                 alogd("--------------get one yuv frame(%s)-----------------", DstPath);
                 waitFrmCnt = 0;
@@ -303,8 +322,81 @@ __TryToGetFrame:
                 alogw("wait one frame for 5s, do not wait anymore! we send another stream!");
             }
         }
+        free(pLenStr);
+        fclose(stContext.mFpDstFile);
         alogd("-----------------------decode h264 naked stream end-----------------------------");
+    } else if (stContext.mVDecAttr.mType == PT_H265) {
+        alogd("-----------------------decode h265 naked stream begin-----------------------------");
+        FILE *fp_bs = fopen(stContext.mConfigPara.mH265VbsPath, "rb");
+        FILE *fp_sz = fopen(stContext.mConfigPara.mH265LenPath, "rb");
+        if ((fp_bs==NULL) || (fp_sz==NULL)) {
+            aloge("fopen fail! fp: %p, sz: %p", fp_bs, fp_sz);
+            return -1;
+        }
+        fseek(fp_sz, 0, SEEK_END);
+        int nLenFileSize = ftell(fp_sz);
+        fseek(fp_sz, 0, SEEK_SET);
+        char *pLenStr = malloc(nLenFileSize);
+        fread(pLenStr, 1, nLenFileSize, fp_sz);
+        char *endptr0 =  pLenStr, *endptr1 = pLenStr + nLenFileSize;
+
+        sprintf(DstPath, "%sh265.yuv", stContext.mConfigPara.mYuvFilePath);
+        stContext.mFpDstFile = fopen(DstPath, "wb");
+
+        while(1) {
+            int pkt_sz;
+            pkt_sz = strtol(endptr0, &endptr1, 10);
+            endptr0 += 8;//endptr1;
+            if (pkt_sz) {
+                alogd("yuvId=%d, pkt_sz=%d", yuvId++, pkt_sz);
+            } else {
+                alogw("pkt_sz=0, exit loop!");
+                break;
+            }
+
+            int rd_cnt = fread(nStreamInfo.pAddr, 1, pkt_sz, fp_bs);
+            if (rd_cnt != pkt_sz) {
+                aloge("error happen! pkt_sz=%d, rd_cnt=%d", pkt_sz, rd_cnt);
+                break;
+            } else {
+                nStreamInfo.mLen = rd_cnt;
+                nStreamInfo.mbEndOfFrame = TRUE;
+                alogd("read vbs packet! rd_cnt=%d", rd_cnt);
+            }
+
+__TryToSendStream2:
+            //send stream to vdec
+            ret = AW_MPI_VDEC_SendStream(stContext.mVDecChn, &nStreamInfo, 100);
+            if(ret != SUCCESS) {
+                alogw("send stream with 100ms timeout fail?! Maybe Vbs is full!");
+                goto __TryToSendStream2;
+            }
+
+__TryToGetFrame2:
+            //get frame from vdec
+            if ((ret=AW_MPI_VDEC_GetImage(stContext.mVDecChn, &nFrameInfo, 1000)) == SUCCESS) {
+                //sprintf(DstPath, "%s%02d_%d_%d.yuv", stContext.mConfigPara.mYuvFilePath, yuvId++, nFrameInfo.VFrame.mWidth, nFrameInfo.VFrame.mHeight);
+                //open yuv file
+                //stContext.mFpDstFile = fopen(DstPath, "wb");
+                fwrite(nFrameInfo.VFrame.mpVirAddr[0], 1, nFrameInfo.VFrame.mWidth*nFrameInfo.VFrame.mHeight, stContext.mFpDstFile);
+                fwrite(nFrameInfo.VFrame.mpVirAddr[1], 1, nFrameInfo.VFrame.mWidth*nFrameInfo.VFrame.mHeight/2, stContext.mFpDstFile);
+                //fclose(stContext.mFpDstFile);
+                AW_MPI_VDEC_ReleaseImage(stContext.mVDecChn, &nFrameInfo);
+                alogd("--------------get one yuv frame(%s)-----------------", DstPath);
+                waitFrmCnt = 0;
+            } else if (ret == ERR_VDEC_NOBUF) {
+                alogd("no valid buf! waitFrmCnt=%d", waitFrmCnt++);
+                if (waitFrmCnt<5)
+                    goto __TryToGetFrame2;
+                alogw("wait one frame for 5s, do not wait anymore! we send another stream!");
+            }
+        }
+        free(pLenStr);
+
+        fclose(stContext.mFpDstFile);
+        alogd("-----------------------decode h265 naked stream end-----------------------------");
     }
+
 
     free(nStreamInfo.pAddr);
 

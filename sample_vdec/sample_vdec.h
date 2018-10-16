@@ -16,6 +16,8 @@ typedef struct SampleVDecConfig {
     char mJpegFilePath[MAX_FILE_PATH_SIZE]; //jpeg src file
     char mH264VbsPath[MAX_FILE_PATH_SIZE];  //h264 vbs file
     char mH264LenPath[MAX_FILE_PATH_SIZE];  //h264 len file
+    char mH265VbsPath[MAX_FILE_PATH_SIZE];  //h265 vbs file
+    char mH265LenPath[MAX_FILE_PATH_SIZE];  //h265 len file
     PAYLOAD_TYPE_E mType;
 } SampleVDecConfig;
 

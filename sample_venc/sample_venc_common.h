@@ -15,6 +15,9 @@
 #define VENC_CFG_DST_BITRATE   "dst_bitrate"
 
 #define VENC_CFG_RC_MODE   "rc_mode"
+#define VENC_CFG_QP0   "qp0"
+#define VENC_CFG_QP1   "qp1"
+
 #define VENC_CFG_ROTATE    "rotate"
 
 

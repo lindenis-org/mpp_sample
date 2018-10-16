@@ -129,7 +129,7 @@ INC_FLAGS += -I$(TOP_DIR)/src/mpp/mpp_menu/
 
 LD_FLAG   :=
 LD_FLAG   += -L=/lib -L=/usr/lib
-LD_FLAG   += -L$(TOP_DIR)/lib -L$(SDK_LIB_SO_DIR) #-L$(SDK_LIB_A_DIR)
+LD_FLAG   += -L$(TOP_DIR)/lib -Wl,-rpath-link=$(SDK_LIB_SO_DIR) -L$(SDK_LIB_SO_DIR) #-L$(SDK_LIB_A_DIR)
 LD_FLAG   += -lc
 LD_FLAG   += -lpthread
 LD_FLAG   += -lTinyServer

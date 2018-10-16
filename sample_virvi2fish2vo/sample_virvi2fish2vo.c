@@ -1,4 +1,4 @@
-/******************************************************************************
+﻿/******************************************************************************
   Copyright (C), 2001-2017, Allwinner Tech. Co., Ltd.
  ******************************************************************************
   File Name     : sample_virvi2fish2vo.c
@@ -413,14 +413,33 @@ static ERRORTYPE loadSampleVirvi2Fish2VoConfig(SampleVirvi2Fish2VoConfig *pConfi
     pConfig->ISEGroupConfig.Lens_Parameter_Cx = pConfig->VIDevConfig.SrcWidth/2;
     pConfig->ISEGroupConfig.Lens_Parameter_Cy = pConfig->VIDevConfig.SrcHeight/2;
     pConfig->ISEGroupConfig.Mount_Mode = GetConfParaInt(&stConfParser, SAMPLE_Virvi2Fish2Vo_ISE_Mount_Mode, 0);
-    pConfig->ISEGroupConfig.normal_pan = GetConfParaInt(&stConfParser, SAMPLE_Virvi2Fish2Vo_ISE_NORMAL_Pan, 0);
-    pConfig->ISEGroupConfig.normal_tilt = GetConfParaInt(&stConfParser, SAMPLE_Virvi2Fish2Vo_ISE_NORMAL_Tilt, 0);
-    pConfig->ISEGroupConfig.normal_zoom = GetConfParaInt(&stConfParser,   SAMPLE_Virvi2Fish2Vo_ISE_NORMAL_Zoom, 0);
-    printf("ISE Group Parameter:dewarp_mode = %d,Lens_Parameter_p = %f,Lens_Parameter_cx = %d,Lens_Parameter_cy = %d,"
-           "mount_mode = %d,pan = %d,tilt = %d,zoom = %d\n",pConfig->ISEGroupConfig.ISE_Dewarp_Mode,
-           pConfig->ISEGroupConfig.Lens_Parameter_P,pConfig->ISEGroupConfig.Lens_Parameter_Cx,
-           pConfig->ISEGroupConfig.Lens_Parameter_Cy,pConfig->ISEGroupConfig.Mount_Mode,
-           pConfig->ISEGroupConfig.normal_pan,pConfig->ISEGroupConfig.normal_tilt,pConfig->ISEGroupConfig.normal_zoom);
+    if(pConfig->ISEGroupConfig.ISE_Dewarp_Mode == WARP_NORMAL) {
+        pConfig->ISEGroupConfig.normal_pan = (float)GetConfParaInt(&stConfParser, SAMPLE_Virvi2Fish2Vo_ISE_NORMAL_Pan, 0);
+        pConfig->ISEGroupConfig.normal_tilt = (float)GetConfParaInt(&stConfParser, SAMPLE_Virvi2Fish2Vo_ISE_NORMAL_Tilt, 0);
+        pConfig->ISEGroupConfig.normal_zoom = (float)GetConfParaInt(&stConfParser,   SAMPLE_Virvi2Fish2Vo_ISE_NORMAL_Zoom, 0);
+        printf("ISE Group Parameter:dewarp_mode = %d,Lens_Parameter_p = %f,Lens_Parameter_cx = %d,Lens_Parameter_cy = %d,"
+               "mount_mode = %d,pan = %f,tilt = %f,zoom = %f\n",pConfig->ISEGroupConfig.ISE_Dewarp_Mode,
+               pConfig->ISEGroupConfig.Lens_Parameter_P,pConfig->ISEGroupConfig.Lens_Parameter_Cx,
+               pConfig->ISEGroupConfig.Lens_Parameter_Cy,pConfig->ISEGroupConfig.Mount_Mode,
+               pConfig->ISEGroupConfig.normal_pan,pConfig->ISEGroupConfig.normal_tilt,pConfig->ISEGroupConfig.normal_zoom);
+    } else if(pConfig->ISEGroupConfig.ISE_Dewarp_Mode == WARP_PTZ4IN1) {
+        for(i = 0; i < 4; i++) {
+            snprintf(name, 256, "ise_ptz4in1_pan_%d", i);
+            pConfig->ISEGroupConfig.ptz4in1_pan[i] = (float)GetConfParaInt(&stConfParser, name, 0);
+            snprintf(name, 256, "ise_ptz4in1_tilt_%d", i);
+            pConfig->ISEGroupConfig.ptz4in1_tilt[i] = (float)GetConfParaInt(&stConfParser, name, 0);
+            snprintf(name, 256, "ise_ptz4in1_zoom_%d", i);
+            pConfig->ISEGroupConfig.ptz4in1_zoom[i] = (float)GetConfParaInt(&stConfParser, name, 0);
+            alogd("ptz4in1_Sub%d:pan = %f,tilt = %f,zoom = %f",i,
+                  pConfig->ISEGroupConfig.ptz4in1_pan[i],pConfig->ISEGroupConfig.ptz4in1_tilt[i],
+                  pConfig->ISEGroupConfig.ptz4in1_zoom[i]);
+        }
+    }
+    alogd("ISE Group Parameter:dewarp_mode = %d,mount_mode = %d,Lens_Parameter_p = %f,"
+          "Lens_Parameter_cx = %f,Lens_Parameter_cy = %f",
+          pConfig->ISEGroupConfig.ISE_Dewarp_Mode,pConfig->ISEGroupConfig.Mount_Mode,
+          pConfig->ISEGroupConfig.Lens_Parameter_P,pConfig->ISEGroupConfig.Lens_Parameter_Cx,
+          pConfig->ISEGroupConfig.Lens_Parameter_Cy);
 
     pConfig->ISEPortConfig[0].ISEWidth = GetConfParaInt(&stConfParser, SAMPLE_Virvi2Fish2Vo_ISE_Width, 0);
     pConfig->ISEPortConfig[0].ISEHeight = GetConfParaInt(&stConfParser, SAMPLE_Virvi2Fish2Vo_ISE_Height, 0);
@@ -591,6 +610,15 @@ int main(int argc, char *argv[])
                         pISEPortCap[i].PortAttr.mode_attr.mFish.ise_cfg.p_undis[1] = -0.0001245920435755955;
 
 #endif
+                    }
+                    if(pISEPortCap[i].PortAttr.mode_attr.mFish.ise_cfg.dewarp_mode == WARP_PTZ4IN1) {
+                        pISEPortCap[i].PortAttr.mode_attr.mFish.ise_cfg.mount_mode = stContext.mConfigPara.ISEGroupConfig.Mount_Mode;;
+                        pISEPortCap->PortAttr.mode_attr.mFish.ise_cfg.mount_mode = stContext.mConfigPara.ISEGroupConfig.Mount_Mode;
+                        for(int sub_num = 0; sub_num < 4; sub_num++) {
+                            pISEPortCap->PortAttr.mode_attr.mFish.ise_cfg.pan_sub[sub_num] = stContext.mConfigPara.ISEGroupConfig.ptz4in1_pan[sub_num];
+                            pISEPortCap->PortAttr.mode_attr.mFish.ise_cfg.tilt_sub[sub_num] = stContext.mConfigPara.ISEGroupConfig.ptz4in1_tilt[sub_num];;
+                            pISEPortCap->PortAttr.mode_attr.mFish.ise_cfg.zoom_sub[sub_num] = stContext.mConfigPara.ISEGroupConfig.ptz4in1_zoom[sub_num];;
+                        }
                     }
                 }
                 pISEPortCap[i].PortAttr.mode_attr.mFish.ise_cfg.out_en[i] = 1;

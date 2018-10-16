@@ -495,12 +495,12 @@ static int mpp_menu_venc_chn_attr_get(void *pData, char *pTitle)
                    venc_attr.RcAttr.mAttrH264Vbr.mStatTime);
             break;
         case VENC_RC_MODE_H264ABR:
-            printf(" VENC_ATTR_H264_ABR.mAvgBitRate:%d  mMaxBitRate:%d  SrcFrmRate:%d  DstFrmRate:%d  \n",
-                   venc_attr.RcAttr.mAttrH264Abr.mAvgBitRate, venc_attr.RcAttr.mAttrH264Abr.mMaxBitRate,
+            printf(" VENC_ATTR_H264_ABR.mMaxBitRate:%d  mMaxBitRate:%d  SrcFrmRate:%d  DstFrmRate:%d  \n",
+                   venc_attr.RcAttr.mAttrH264Abr.mMaxBitRate, venc_attr.RcAttr.mAttrH264Abr.mMaxBitRate,
                    venc_attr.RcAttr.mAttrH264Abr.mSrcFrmRate, venc_attr.RcAttr.mAttrH264Abr.fr32DstFrmRate);
-            printf(" VENC_ATTR_H264_ABR.mGop:%d  mStatTime:%d  mMinStaticPercent:%d  mMaxIQp:%d  mMinIQp:%d \n",
+            printf(" VENC_ATTR_H264_ABR.mGop:%d  mStatTime:%d mQuality:%d  mMaxIQp:%d  mMinIQp:%d \n",
                    venc_attr.RcAttr.mAttrH264Abr.mGop, venc_attr.RcAttr.mAttrH264Abr.mStatTime,
-                   venc_attr.RcAttr.mAttrH264Abr.mMinStaticPercent, venc_attr.RcAttr.mAttrH264Abr.mMaxIQp,
+                   venc_attr.RcAttr.mAttrH264Abr.mQuality, venc_attr.RcAttr.mAttrH264Abr.mMaxIQp,
                    venc_attr.RcAttr.mAttrH264Abr.mMinIQp);
             break;
         case VENC_RC_MODE_H264FIXQP:
@@ -620,8 +620,8 @@ static int mpp_menu_venc_bitrate_set(void *pData, char *pTitle)
             venc_attr.RcAttr.mAttrH264Vbr.mMaxBitRate = val * 1000;
             break;
         case VENC_RC_MODE_H264ABR:
-            tmp = venc_attr.RcAttr.mAttrH264Abr.mAvgBitRate / 1000;
-            venc_attr.RcAttr.mAttrH264Abr.mAvgBitRate = val * 1000;
+            tmp = venc_attr.RcAttr.mAttrH264Abr.mMaxBitRate / 1000;
+            venc_attr.RcAttr.mAttrH264Abr.mMaxBitRate = val * 1000;
             break;
         case VENC_RC_MODE_H264FIXQP:
         case VENC_RC_MODE_H264QPMAP:
@@ -702,7 +702,7 @@ static int mpp_menu_venc_bitrate_get(void *pData, char *pTitle)
             val = venc_attr.RcAttr.mAttrH264Vbr.mMaxBitRate;
             break;
         case VENC_RC_MODE_H264ABR:
-            val = venc_attr.RcAttr.mAttrH264Abr.mAvgBitRate;
+            val = venc_attr.RcAttr.mAttrH264Abr.mMaxBitRate;
             break;
         case VENC_RC_MODE_H264FIXQP:
         case VENC_RC_MODE_H264QPMAP:

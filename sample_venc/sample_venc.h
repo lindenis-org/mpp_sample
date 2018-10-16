@@ -80,6 +80,9 @@ typedef struct VencConfig {
     int mTimeBetweenFrameCapture;
 
     int mRcMode;
+    //for cbr/vbr:qp0=minQp, qp1=maxQp; for fixqp:qp0=IQp, qp1=PQp; for mjpeg cbr:qp0=init_Qfactor
+    int mQp0;
+    int mQp1;
     ROTATE_E rotate;
 
     int mTestDuration;

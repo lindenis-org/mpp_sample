@@ -26,9 +26,12 @@ typedef struct SampleISEGroupConfig {
     float Lens_Parameter_P;
     float Lens_Parameter_Cx;
     float Lens_Parameter_Cy;
-    int normal_pan;
-    int normal_tilt;
-    int normal_zoom;
+    float normal_pan;
+    float normal_tilt;
+    float normal_zoom;
+    float ptz4in1_pan[4];
+    float ptz4in1_tilt[4];
+    float ptz4in1_zoom[4];
     char OutputFilePath[MAX_FILE_PATH_SIZE];
 } SampleISEGroupConfig;
 

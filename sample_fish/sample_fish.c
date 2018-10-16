@@ -415,14 +415,30 @@ static ERRORTYPE loadSampleFishConfig(SampleFishConfig *pConfig, const char *con
     pConfig->ISEGroupConfig.Lens_Parameter_Cx = pConfig->PicConfig.PicWidth/2;
     pConfig->ISEGroupConfig.Lens_Parameter_Cy = pConfig->PicConfig.PicHeight/2;
     pConfig->ISEGroupConfig.Mount_Mode = GetConfParaInt(&stConfParser, SAMPLE_Fish_Mount_Mode, 0);
-    pConfig->ISEGroupConfig.normal_pan = GetConfParaInt(&stConfParser, SAMPLE_Fish_NORMAL_Pan, 0);
-    pConfig->ISEGroupConfig.normal_tilt = GetConfParaInt(&stConfParser, SAMPLE_Fish_NORMAL_Tilt, 0);
-    pConfig->ISEGroupConfig.normal_zoom = GetConfParaInt(&stConfParser,   SAMPLE_Fish_NORMAL_Zoom, 0);
-    alogd("ISE Group Parameter:dewarp_mode = %d,Lens_Parameter_p = %f,Lens_Parameter_cx = %d,Lens_Parameter_cy = %d,"
-          "mount_mode = %d,pan = %d,tilt = %d,zoom = %d\n",pConfig->ISEGroupConfig.ISE_Dewarp_Mode,
+    if(pConfig->ISEGroupConfig.ISE_Dewarp_Mode == WARP_NORMAL) {
+        pConfig->ISEGroupConfig.normal_pan = (float)GetConfParaInt(&stConfParser, SAMPLE_Fish_NORMAL_Pan, 0);
+        pConfig->ISEGroupConfig.normal_tilt = (float)GetConfParaInt(&stConfParser, SAMPLE_Fish_NORMAL_Tilt, 0);
+        pConfig->ISEGroupConfig.normal_zoom = (float)GetConfParaInt(&stConfParser,   SAMPLE_Fish_NORMAL_Zoom, 0);
+        alogd("pan = %f,tilt = %f,zoom = %f\n",pConfig->ISEGroupConfig.normal_pan,
+              pConfig->ISEGroupConfig.normal_tilt,pConfig->ISEGroupConfig.normal_zoom);
+    } else if(pConfig->ISEGroupConfig.ISE_Dewarp_Mode == WARP_PTZ4IN1) {
+        for(i = 0; i < 4; i++) {
+            snprintf(name, 256, "ise_ptz4in1_pan_%d", i);
+            pConfig->ISEGroupConfig.ptz4in1_pan[i] = (float)GetConfParaInt(&stConfParser, name, 0);
+            snprintf(name, 256, "ise_ptz4in1_tilt_%d", i);
+            pConfig->ISEGroupConfig.ptz4in1_tilt[i] = (float)GetConfParaInt(&stConfParser, name, 0);
+            snprintf(name, 256, "ise_ptz4in1_zoom_%d", i);
+            pConfig->ISEGroupConfig.ptz4in1_zoom[i] = (float)GetConfParaInt(&stConfParser, name, 0);
+            alogd("ptz4in1_Sub%d:pan = %f,tilt = %f,zoom = %f",i,
+                  pConfig->ISEGroupConfig.ptz4in1_pan[i],pConfig->ISEGroupConfig.ptz4in1_tilt[i],
+                  pConfig->ISEGroupConfig.ptz4in1_zoom[i]);
+        }
+    }
+    alogd("ISE Group Parameter:dewarp_mode = %d,mount_mode = %d,Lens_Parameter_p = %f,"
+          "Lens_Parameter_cx = %f,Lens_Parameter_cy = %f",
+          pConfig->ISEGroupConfig.ISE_Dewarp_Mode,pConfig->ISEGroupConfig.Mount_Mode,
           pConfig->ISEGroupConfig.Lens_Parameter_P,pConfig->ISEGroupConfig.Lens_Parameter_Cx,
-          pConfig->ISEGroupConfig.Lens_Parameter_Cy,pConfig->ISEGroupConfig.Mount_Mode,
-          pConfig->ISEGroupConfig.normal_pan,pConfig->ISEGroupConfig.normal_tilt,pConfig->ISEGroupConfig.normal_zoom);
+          pConfig->ISEGroupConfig.Lens_Parameter_Cy);
     /*ISE Port parameter*/
     for(i = 0; i < ISEPortNum; i++) {
         snprintf(name, 256, "ise_port%d_width", i);
@@ -506,6 +522,8 @@ static void *Loop_GetIseData(void *pArg)
     width = pCap->width;
     height = pCap->height;
     char *name = pCap->OutputFilePath;
+    static struct timeval last_call_tv = {0}, cur_call_tv = {0};
+    static long call_diff_ms = -1;
     while(1) {
         if(Thread_EXIT == TRUE) {
             alogd("Thread_EXIT is True!\n");
@@ -540,20 +558,47 @@ static void *Loop_GetIseData(void *pArg)
             i++;
 
 #if Dynamic_PTZ
-            struct timeval tpstart,tpend;
-            float timeuse;
-            gettimeofday(&tpstart, NULL);
-            if(ISEPort == 0 && !Dynamic_Flag) {
-                ISEPortAttr.mode_attr.mFish.ise_cfg.pan = 125.0f;
-                ISEPortAttr.mode_attr.mFish.ise_cfg.tilt = 45.0f;
-                ISEPortAttr.mode_attr.mFish.ise_cfg.zoom = 2.0f;
-                AW_MPI_ISE_SetPortAttr(ISEGroup,ISEPort,&ISEPortAttr);
-//                Dynamic_Flag = TRUE;
+            if (call_diff_ms < 0) {
+                gettimeofday(&last_call_tv, NULL);
             }
-            gettimeofday(&tpend,NULL);
-            timeuse=1000000*(tpend.tv_sec-tpstart.tv_sec)+(tpend.tv_usec-tpstart.tv_usec);
-            timeuse/=1000;
-            alogd("------>Dynamic PTZ Used Time:%f ms<------\n", timeuse);
+            gettimeofday(&cur_call_tv, NULL);
+
+            call_diff_ms = (cur_call_tv.tv_sec*1000 + cur_call_tv.tv_usec/1000) -
+                           (last_call_tv.tv_sec*1000 + last_call_tv.tv_usec/1000);
+            if(pCap->PortAttr.mode_attr.mFish.ise_cfg.dewarp_mode == WARP_PTZ4IN1) {
+                if(ISEPort == 0 && !Dynamic_Flag && (call_diff_ms >= 60 || call_diff_ms == 0)) {
+                    last_call_tv.tv_sec = cur_call_tv.tv_sec;
+                    last_call_tv.tv_usec = cur_call_tv.tv_usec;
+                    ISEPortAttr.mode_attr.mFish.ise_cfg.ptzsub_chg[0] = 1;
+                    ISEPortAttr.mode_attr.mFish.ise_cfg.pan_sub[0] = 125.0f;
+                    ISEPortAttr.mode_attr.mFish.ise_cfg.tilt_sub[0] = 45.0f;
+                    ISEPortAttr.mode_attr.mFish.ise_cfg.zoom_sub[0] = 2.0f;
+                    ISEPortAttr.mode_attr.mFish.ise_cfg.ptzsub_chg[1] = 1;
+                    ISEPortAttr.mode_attr.mFish.ise_cfg.pan_sub[1] = 90.0f;
+                    ISEPortAttr.mode_attr.mFish.ise_cfg.tilt_sub[1] = 45.0f;
+                    ISEPortAttr.mode_attr.mFish.ise_cfg.zoom_sub[1] = 2.0f;
+                    ISEPortAttr.mode_attr.mFish.ise_cfg.ptzsub_chg[2] = 1;
+                    ISEPortAttr.mode_attr.mFish.ise_cfg.pan_sub[2] = 100.0f;
+                    ISEPortAttr.mode_attr.mFish.ise_cfg.tilt_sub[2] = 45.0f;
+                    ISEPortAttr.mode_attr.mFish.ise_cfg.zoom_sub[2] = 2.0f;
+                    ISEPortAttr.mode_attr.mFish.ise_cfg.ptzsub_chg[3] = 1;
+                    ISEPortAttr.mode_attr.mFish.ise_cfg.pan_sub[3] = 150.0f;
+                    ISEPortAttr.mode_attr.mFish.ise_cfg.tilt_sub[3] = 45.0f;
+                    ISEPortAttr.mode_attr.mFish.ise_cfg.zoom_sub[3] = 2.0f;
+                    AW_MPI_ISE_SetPortAttr(ISEGroup,ISEPort,&ISEPortAttr);
+                    //                Dynamic_Flag = TRUE;
+                }
+            } else if(pCap->PortAttr.mode_attr.mFish.ise_cfg.dewarp_mode == WARP_NORMAL) {
+                if(ISEPort == 0 && !Dynamic_Flag && (call_diff_ms >= 60 || call_diff_ms == 0)) {
+                    last_call_tv.tv_sec = cur_call_tv.tv_sec;
+                    last_call_tv.tv_usec = cur_call_tv.tv_usec;
+                    ISEPortAttr.mode_attr.mFish.ise_cfg.pan = 125.0f;
+                    ISEPortAttr.mode_attr.mFish.ise_cfg.tilt = 45.0f;
+                    ISEPortAttr.mode_attr.mFish.ise_cfg.zoom = 2.0f;
+                    AW_MPI_ISE_SetPortAttr(ISEGroup,ISEPort,&ISEPortAttr);
+                    //                Dynamic_Flag = TRUE;
+                }
+            }
 #endif
         }
     }
@@ -663,7 +708,7 @@ int main(int argc, char *argv[])
                     pISEPortCap->PortAttr.mode_attr.mFish.ise_cfg.in_w = stContext.mConfigPara.PicConfig.PicWidth;
                     pISEPortCap->PortAttr.mode_attr.mFish.ise_cfg.p  = stContext.mConfigPara.ISEGroupConfig.Lens_Parameter_P;
                     pISEPortCap->PortAttr.mode_attr.mFish.ise_cfg.cx = stContext.mConfigPara.ISEGroupConfig.Lens_Parameter_Cx;
-                    pISEPortCap->PortAttr.mode_attr.mFish.ise_cfg.cy = stContext.mConfigPara.ISEGroupConfig.Lens_Parameter_P;
+                    pISEPortCap->PortAttr.mode_attr.mFish.ise_cfg.cy = stContext.mConfigPara.ISEGroupConfig.Lens_Parameter_Cy;
                     pISEPortCap->PortAttr.mode_attr.mFish.ise_cfg.in_yuv_type = 0; // YUV420
                     pISEPortCap->PortAttr.mode_attr.mFish.ise_cfg.out_yuv_type = 0; // YUV420
                     pISEPortCap->PortAttr.mode_attr.mFish.ise_cfg.in_luma_pitch = stContext.mConfigPara.PicConfig.PicWidth;
@@ -718,6 +763,14 @@ int main(int argc, char *argv[])
                         pISEPortCap->PortAttr.mode_attr.mFish.ise_cfg.p_undis[0] = 0.000362407777916013;
                         pISEPortCap->PortAttr.mode_attr.mFish.ise_cfg.p_undis[1] = -0.0001245920435755955;
 #endif
+                    }
+                    if(pISEPortCap->PortAttr.mode_attr.mFish.ise_cfg.dewarp_mode == WARP_PTZ4IN1) {
+                        pISEPortCap->PortAttr.mode_attr.mFish.ise_cfg.mount_mode = stContext.mConfigPara.ISEGroupConfig.Mount_Mode;
+                        for(int sub_num = 0; sub_num < 4; sub_num++) {
+                            pISEPortCap->PortAttr.mode_attr.mFish.ise_cfg.pan_sub[sub_num] = stContext.mConfigPara.ISEGroupConfig.ptz4in1_pan[sub_num];
+                            pISEPortCap->PortAttr.mode_attr.mFish.ise_cfg.tilt_sub[sub_num] = stContext.mConfigPara.ISEGroupConfig.ptz4in1_tilt[sub_num];;
+                            pISEPortCap->PortAttr.mode_attr.mFish.ise_cfg.zoom_sub[sub_num] = stContext.mConfigPara.ISEGroupConfig.ptz4in1_zoom[sub_num];;
+                        }
                     }
                 }
                 pISEPortCap->PortAttr.mode_attr.mFish.ise_cfg.out_en[i] = 1;

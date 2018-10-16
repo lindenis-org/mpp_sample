@@ -14,5 +14,8 @@
 #define SAMPLE_VDEC_H264_VBS_PATH     "h264_vbs_path"
 #define SAMPLE_VDEC_H264_LEN_PATH     "h264_len_path"
 
+#define SAMPLE_VDEC_H265_VBS_PATH     "h265_vbs_path"
+#define SAMPLE_VDEC_H265_LEN_PATH     "h265_len_path"
+
 #endif  /* _SAMPLE_VDEC_CONFIG_H_ */
 
