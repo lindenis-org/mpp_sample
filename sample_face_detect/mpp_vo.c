@@ -38,11 +38,12 @@ int create_vo(VO_Params* pVOParams)
 {
     // Create VO channel
     AW_MPI_VO_Enable(pVOParams->iVoDev);
-    AW_MPI_VO_AddOutsideVideoLayer(pVOParams->iMiniGUILayer);
-    AW_MPI_VO_CloseVideoLayer(pVOParams->iMiniGUILayer); /* close ui layer. */
+    //AW_MPI_VO_AddOutsideVideoLayer(pVOParams->iMiniGUILayer);
+    //AW_MPI_VO_CloseVideoLayer(pVOParams->iMiniGUILayer); /* close ui layer. */
     AW_MPI_VO_EnableVideoLayer(pVOParams->iVoLayer);
 
     // Config VO channel
+    AW_MPI_VO_SetVideoLayerPriority(pVOParams->iVoLayer, 11);
     VO_PUB_ATTR_S spPubAttr;
     AW_MPI_VO_GetPubAttr(pVOParams->iVoDev, &spPubAttr);
     spPubAttr.enIntfType = pVOParams->iDispType;
@@ -76,7 +77,7 @@ int destroy_vo(VO_Params* pVOParams)
     AW_MPI_VO_StopChn(pVOParams->iVoLayer, pVOParams->iVoChn);
     AW_MPI_VO_DisableChn(pVOParams->iVoLayer, pVOParams->iVoChn);
     AW_MPI_VO_DisableVideoLayer(pVOParams->iVoLayer);
-    AW_MPI_VO_RemoveOutsideVideoLayer(pVOParams->iMiniGUILayer);
+    //AW_MPI_VO_RemoveOutsideVideoLayer(pVOParams->iMiniGUILayer);
     AW_MPI_VO_Disable(pVOParams->iVoDev);
 
     return 0;

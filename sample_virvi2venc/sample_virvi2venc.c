@@ -300,6 +300,7 @@ int main(int argc, char *argv[])
             return -1;
         }
         VI_ATTR_S stAttr;
+		memset(&stAttr, 0, sizeof(VI_ATTR_S));
         vipp_dev = stContext.mConfigPara.DevNum;
         /* dev:0, chn:0,1,2,3,4...16 */
         /* dev:1, chn:0,1,2,3,4...16 */

@@ -31,7 +31,7 @@ SampleVIRVI2VOContext *pSampleVIRVI2VOContext = NULL;
 int initSampleVIRVI2VOContext(SampleVIRVI2VOContext *pContext)
 {
     memset(pContext, 0, sizeof(SampleVIRVI2VOContext));
-    pContext->mUILayer = HLAY(2, 0);
+    //pContext->mUILayer = HLAY(2, 0);
     cdx_sem_init(&pContext->mSemExit, 0);
     return 0;
 }
@@ -391,8 +391,8 @@ int main(int argc __attribute__((__unused__)), char *argv[] __attribute__((__unu
     /* enable vo dev */
     stContext.mVoDev = 0;
     AW_MPI_VO_Enable(stContext.mVoDev);
-    AW_MPI_VO_AddOutsideVideoLayer(stContext.mUILayer);
-    AW_MPI_VO_CloseVideoLayer(stContext.mUILayer); /* close ui layer. */
+    //AW_MPI_VO_AddOutsideVideoLayer(stContext.mUILayer);
+    //AW_MPI_VO_CloseVideoLayer(stContext.mUILayer); /* close ui layer. */
     /* enable vo layer */
     int hlay0 = 0;
     while(hlay0 < VO_MAX_LAYER_NUM) {
@@ -412,6 +412,7 @@ int main(int argc __attribute__((__unused__)), char *argv[] __attribute__((__unu
     AW_MPI_VO_SetPubAttr(stContext.mVoDev, &spPubAttr);
 
     stContext.mVoLayer = hlay0;
+    AW_MPI_VO_SetVideoLayerPriority(stContext.mVoLayer, 11);
     AW_MPI_VO_GetVideoLayerAttr(stContext.mVoLayer, &stContext.mLayerAttr);
     stContext.mLayerAttr.stDispRect.X = 0;
     stContext.mLayerAttr.stDispRect.Y = 0;
@@ -466,7 +467,7 @@ int main(int argc __attribute__((__unused__)), char *argv[] __attribute__((__unu
     }
     AW_MPI_VO_StartChn(stContext.mVoLayer, stContext.mVOChn);
 
-#if 1
+#if 0
     char str[256]  = {0};
     char val[16] = {0};
     int num = 0, vl = 0;
@@ -643,7 +644,7 @@ vo_create_chn_err:
     /* disable vo layer */
     AW_MPI_VO_DisableVideoLayer(stContext.mVoLayer);
     stContext.mVoLayer = -1;
-    AW_MPI_VO_RemoveOutsideVideoLayer(stContext.mUILayer);
+    //AW_MPI_VO_RemoveOutsideVideoLayer(stContext.mUILayer);
     /* disalbe vo dev */
     AW_MPI_VO_Disable(stContext.mVoDev);
     stContext.mVoDev = -1;

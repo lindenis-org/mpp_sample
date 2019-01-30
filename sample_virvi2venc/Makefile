@@ -26,14 +26,14 @@ INC := -I.\
 
 # share libraries
 LIBS := \
-	-llog \
-    -lvencoder \
+    -llog \
     -lsample_confparser \
-   	-lmpp_vi \
-   	-lmpp_isp \
-   	-lmpp_ise \
-   	-lmpp_vo \
-   	-lmpp_component \
+    -lmpp_vi \
+    -lmpp_isp \
+    -lvencoder \
+    -lmpp_ise \
+    -lmpp_vo \
+    -lmpp_component \
     -lmedia_mpp \
     -lISP \
     -lMemAdapter \

@@ -22,20 +22,21 @@ INC := -I.\
     -I/usr/include/mpp/middleware/media/LIBRARY/libAIE_Vda/include \
     -I/usr/include/mpp/middleware/media/LIBRARY/include_stream \
     -I/usr/include/mpp/middleware/media/LIBRARY/include_FsWriter \
+    -I/usr/include/mpp/middleware/media/LIBRARY/include_muxer \
     -I/usr/include/mpp/middleware/media/LIBRARY/libcedarc/include \
     -I/usr/include/mpp/middleware/media/LIBRARY/libcedarx/libcore/common/iniparser \
     -I/usr/include/mpp/middleware/sample/configfileparser
 
 # share libraries
 LIBS := \
-	-llog \
+    -llog \
     -lvencoder \
     -lsample_confparser \
-   	-lmpp_vi \
-   	-lmpp_isp \
-   	-lmpp_ise \
-   	-lmpp_vo \
-   	-lmpp_component \
+    -lmpp_vi \
+    -lmpp_isp \
+    -lmpp_ise \
+    -lmpp_vo \
+    -lmpp_component \
     -lmedia_mpp \
     -lISP \
     -lMemAdapter \

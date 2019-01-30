@@ -135,9 +135,9 @@ int mpp_comm_vo_dev_create(VO_DEV_TYPE_E dev_type, VO_DEV_CFG_S *dev_cfg)
     /* Because MINI GUI must used pipe_1 ,
           * so video used pipe_0, pipe_2, pipe_3. in V5 chip.
           */
-    VO_LAYER  vo_layer = HLAY(2, 0);
-    AW_MPI_VO_AddOutsideVideoLayer(vo_layer);
-    AW_MPI_VO_CloseVideoLayer(vo_layer);    //close ui layer.
+    //VO_LAYER  vo_layer = HLAY(2, 0);
+    //AW_MPI_VO_AddOutsideVideoLayer(vo_layer);
+    //AW_MPI_VO_CloseVideoLayer(vo_layer);    //close ui layer.
 
     /* Switch hw display to CVBS/HDMI/LCD */
     VO_PUB_ATTR_S stPubAttr;
@@ -194,9 +194,9 @@ int mpp_comm_vo_dev_destroy(VO_DEV_TYPE_E dev_type)
     /* Because MINI GUI must used pipe_1 ,
           * so video used pipe_0, pipe_2, pipe_3. in V5 chip.
           */
-    VO_LAYER  vo_layer = HLAY(2, 0);
-    AW_MPI_VO_AddOutsideVideoLayer(vo_layer);
-    AW_MPI_VO_CloseVideoLayer(vo_layer);    //close ui layer.
+    //VO_LAYER  vo_layer = HLAY(2, 0);
+    //AW_MPI_VO_AddOutsideVideoLayer(vo_layer);
+    //AW_MPI_VO_CloseVideoLayer(vo_layer);    //close ui layer.
 
     return ret;
 }
@@ -251,6 +251,12 @@ int mpp_comm_vo_chn_create(int vo_chn, VO_CHN_CFG_S *vo_chn_cfg)
     ret = AW_MPI_VO_SetVideoLayerAttr(vo_layer, &vo_layer_attr);
     if (SUCCESS != ret) {
         ERR_PRT("Do AW_MPI_VO_SetVideoLayerAttr fail! vo_layer:%d ret:%d\n", vo_layer, ret);
+        return ret;
+    }
+
+    ret = AW_MPI_VO_SetVideoLayerPriority(vo_layer, 11);
+    if (SUCCESS != ret) {
+        ERR_PRT("Do AW_MPI_VO_SetVideoLayerPriority fail! vo_layer:%d ret:%d\n", vo_layer, ret);
         return ret;
     }
 

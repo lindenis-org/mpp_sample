@@ -198,6 +198,7 @@ static ERRORTYPE InitVippDevice(CVE_VLPR_CONF_INFO_S *pConfInfo)
     }
 
     MPP_SYS_CONF_S mSysConf;
+    memset(&mSysConf, 0, sizeof(mSysConf));
     mSysConf.nAlignWidth = 32;
     AW_MPI_SYS_SetConf(&mSysConf);
     iRet = AW_MPI_SYS_Init();

@@ -22,7 +22,7 @@
 #include <string.h>
 
 #include "plat_log.h"
-#include <VIDEO_FRAME_INFO_S.h>
+#include <utils/VIDEO_FRAME_INFO_S.h>
 #include <ClockCompPortIndex.h>
 #include <mpi_demux.h>
 #include <mpi_vdec.h>

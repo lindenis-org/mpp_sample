@@ -10,11 +10,24 @@
   Function List :
   History       :
 ******************************************************************************/
+#include <endian.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <getopt.h>
+#include <pthread.h>
+#include <signal.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "sample_face_detect.h"
 
 int64_t g_last_eve_time = 0;
 int64_t g_last_vo_time = 0;
 int64_t g_exit_flag = 0;
+int64_t g_Running_flag = 1;
 
 #define DISPALIGN(value, align) ((align==0)?(unsigned long)value:((((unsigned long)value) + ((align) - 1)) & ~((align) - 1)))
 
@@ -27,6 +40,12 @@ typedef struct _UserConfig {
     Picture_Params stPictureParam;
     THREAD_DATA    stThreadData[PROC_MAX];
 } UserConfig;
+
+void handle_exit(int signo)
+{
+    alogd("I have known you want to exit! Please wait for this round finished !");
+    g_Running_flag = 0;
+}
 
 // VirVi数据处理线程
 static void *EVE_Proc(void* pThreadData)
@@ -56,7 +75,7 @@ static void *EVE_Proc(void* pThreadData)
     AW_AI_EVE_EVENT_RESULT_S eve_result = {0};
     int iFrameIdx      = 0;
     int iFrameInterval = 1000000 / pEVEParams->iFrmRate;
-    while (iFrameIdx < pEVEParams->iFrameNum) {
+    while (g_Running_flag && iFrameIdx < pEVEParams->iFrameNum) {
         // 获取一帧YUV数据
         VIDEO_FRAME_INFO_S stFrameInfo;
         if (SUCCESS == AW_MPI_VI_GetFrame(pVirViParam->iViDev, pVirViParam->iViChn, &stFrameInfo, 500)) {
@@ -172,7 +191,7 @@ static void *VO_Proc(void* pThreadData)
     uint64_t nFrameInterval = 1000000/30; //unit:us
     int iFrameIdx = 0;
     time_t pre_time  = 0;
-    while (iFrameIdx < pVO_Params->iFrameNum) {
+    while (g_Running_flag && iFrameIdx < pVO_Params->iFrameNum) {
         // 获取一帧YUV数据
         VIDEO_FRAME_INFO_S stFrameInfo;
         VIDEO_FRAME_INFO_S *pFrameInfo;
@@ -325,7 +344,7 @@ static void *VENC_Proc(void* pThreadData)
     vencFrame.mPackCount = 1;
 
     int iFrameIdx = 0;
-    while (iFrameIdx < pVENCParams->iFrameNum) {
+    while (g_Running_flag && iFrameIdx < pVENCParams->iFrameNum) {
         // 获取一帧YUV数据
         VIDEO_FRAME_INFO_S stFrameInfo;
         if (SUCCESS == AW_MPI_VI_GetFrame(pVirViParam->iViDev, pVirViParam->iViChn, &stFrameInfo, 500)) {
@@ -643,6 +662,10 @@ int main(int argc, char *argv[])
     create_vi(stUserCfg.stVirViParams);
     create_eve(&stUserCfg.stEVEParams);
     create_vo(&stUserCfg.stVOParams);
+
+    /* register process function for SIGINT, to exit program. */
+    if (signal(SIGINT, handle_exit) == SIG_ERR)
+        perror("can't catch SIGSEGV");
 
     // Create Process thread
     for (int ProcIndex = 0; ProcIndex < PROC_MAX; ProcIndex++) {

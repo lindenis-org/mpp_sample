@@ -469,6 +469,7 @@ static int CreateVi2VencThread(SampleUVCContext *pConfig)
     int iRet;
 
     MPP_SYS_CONF_S mSysConf;
+    memset(&mSysConf, 0, sizeof(mSysConf));
     mSysConf.nAlignWidth = 32;
     AW_MPI_SYS_SetConf(&mSysConf);
     iRet = AW_MPI_SYS_Init();
@@ -653,6 +654,7 @@ static int DestroyVi2VencThread(SampleUVCContext *pConfig)
     return iRet;
 }
 
+#if 0
 static int CreateVi2EveFaceThread(SampleUVCContext *pConfig)
 {
     int iRet;
@@ -851,6 +853,7 @@ create_vipp_err:
 sys_init_err:
     return iRet;
 }
+#endif
 
 static int DestroyVi2EveFaceThread(SampleUVCContext *pConfig)
 {
@@ -875,17 +878,17 @@ static int StartProcessing(SampleUVCContext *pConfig)
     int iRet = 0;
 
     AW_MPI_ISP_Init();
-    AW_MPI_ISP_Run(pConfig->mUVCInfo.iFaceIspDev);
+    // AW_MPI_ISP_Run(pConfig->mUVCInfo.iFaceIspDev);
     AW_MPI_ISP_Run(pConfig->mUVCInfo.iIspDev);
-    AW_MPI_VI_EnableVirChn(pConfig->mUVCInfo.iFaceVippDev, pConfig->mUVCInfo.iFaceVippChn);
+    // AW_MPI_VI_EnableVirChn(pConfig->mUVCInfo.iFaceVippDev, pConfig->mUVCInfo.iFaceVippChn);
     AW_MPI_VI_EnableVirChn(pConfig->mUVCInfo.iVippDev, pConfig->mUVCInfo.iVippChn);
     AW_MPI_VENC_StartRecvPic(pConfig->mUVCInfo.iVippChn);
 
-    iRet = pthread_create(&pConfig->mUVCInfo.tFaceTrd, NULL, Vipp2EveFaceThread, pConfig);
+    /*iRet = pthread_create(&pConfig->mUVCInfo.tFaceTrd, NULL, Vipp2EveFaceThread, pConfig);
     if (iRet < 0) {
         aloge("caeate Vipp2EveFaceThread failed!!\n");
         goto create_vipp2eveface_err;
-    }
+    }*/
 
     iRet = pthread_create(&pConfig->mUVCInfo.tEncTrd, NULL, Vipp2VencThread, pConfig);
     if (iRet < 0) {
@@ -1604,11 +1607,11 @@ int main(int argc, char *argv[])
         aloge("create vipp to venc thread failed!!\n");
         goto init_vi2venc_err;
     }
-    iRet = CreateVi2EveFaceThread(&stContext);
+    /*iRet = CreateVi2EveFaceThread(&stContext);
     if (iRet < 0) {
         aloge("create vipp to eve face thread failed!!\n");
         goto init_vi2evefave_err;
-    }
+    }*/
     iRet = StartProcessing(&stContext);
     if (iRet < 0) {
         aloge("start processing failed!!\n");
@@ -1652,7 +1655,7 @@ int main(int argc, char *argv[])
 init_uvc_err:
     StopProcessing(&stContext);
 start_processing_err:
-    DestroyVi2EveFaceThread(&stContext);
+    // DestroyVi2EveFaceThread(&stContext);
 init_vi2evefave_err:
     DestroyVi2VencThread(&stContext);
 init_vi2venc_err:

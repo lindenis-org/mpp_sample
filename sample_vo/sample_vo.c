@@ -175,7 +175,7 @@ int initSampleVOContext(SampleVOContext *pContext)
     if(err!=0) {
         aloge("cdx sem init fail!");
     }
-    pContext->mUILayer = HLAY(2, 0);
+    //pContext->mUILayer = HLAY(2, 0);
     return 0;
 }
 int destroySampleVOContext(SampleVOContext *pContext)
@@ -357,8 +357,8 @@ int main(int argc, char *argv[])
     /* enable vo dev, default 0 */
     stContext.mVoDev = 0;
     AW_MPI_VO_Enable(stContext.mVoDev);
-    AW_MPI_VO_AddOutsideVideoLayer(stContext.mUILayer);
-    AW_MPI_VO_CloseVideoLayer(stContext.mUILayer);//close ui layer.
+    //AW_MPI_VO_AddOutsideVideoLayer(stContext.mUILayer);
+    //AW_MPI_VO_CloseVideoLayer(stContext.mUILayer);//close ui layer.
     /* enable vo layer */
     int hlay0 = 0;
     while(hlay0 < VO_MAX_LAYER_NUM) {
@@ -380,6 +380,7 @@ int main(int argc, char *argv[])
 #endif
 
     stContext.mVoLayer = hlay0;
+    AW_MPI_VO_SetVideoLayerPriority(stContext.mVoLayer, 11);
     AW_MPI_VO_GetVideoLayerAttr(stContext.mVoLayer, &stContext.mLayerAttr);
     stContext.mLayerAttr.stDispRect.X = 0;
     stContext.mLayerAttr.stDispRect.Y = 0;
@@ -514,7 +515,7 @@ int main(int argc, char *argv[])
     /* disable vo layer */
     AW_MPI_VO_DisableVideoLayer(stContext.mVoLayer);
     stContext.mVoLayer = -1;
-    AW_MPI_VO_RemoveOutsideVideoLayer(stContext.mUILayer);
+    //AW_MPI_VO_RemoveOutsideVideoLayer(stContext.mUILayer);
     /* disalbe vo dev */
     AW_MPI_VO_Disable(stContext.mVoDev);
     stContext.mVoDev = -1;

@@ -303,11 +303,11 @@ static ERRORTYPE createVoChn(SAMPLE_DEMUX2VDEC2VO_S *pDemux2Vdec2VoData)
     BOOL nSuccessFlag = FALSE;
 
     pDemux2Vdec2VoData->mVoDev = 0;
-    pDemux2Vdec2VoData->mUILayer = HLAY(1, 0);
+    //pDemux2Vdec2VoData->mUILayer = HLAY(1, 0);
 
     AW_MPI_VO_Enable(pDemux2Vdec2VoData->mVoDev);
-    AW_MPI_VO_AddOutsideVideoLayer(pDemux2Vdec2VoData->mUILayer);
-    AW_MPI_VO_CloseVideoLayer(pDemux2Vdec2VoData->mUILayer);//close ui layer.
+    //AW_MPI_VO_AddOutsideVideoLayer(pDemux2Vdec2VoData->mUILayer);
+    //AW_MPI_VO_CloseVideoLayer(pDemux2Vdec2VoData->mUILayer);//close ui layer.
 
     //enable vo layer
     int hlay0 = 0;
@@ -321,18 +321,19 @@ static ERRORTYPE createVoChn(SAMPLE_DEMUX2VDEC2VO_S *pDemux2Vdec2VoData)
     if (hlay0 >= VO_MAX_LAYER_NUM) {
         aloge("fatal error! enable video layer fail!");
         pDemux2Vdec2VoData->mVoLayer = MM_INVALID_DEV;
-        AW_MPI_VO_RemoveOutsideVideoLayer(pDemux2Vdec2VoData->mUILayer);
+        //AW_MPI_VO_RemoveOutsideVideoLayer(pDemux2Vdec2VoData->mUILayer);
         AW_MPI_VO_Disable(pDemux2Vdec2VoData->mVoDev);
         return FAILURE;
     }
 
     pDemux2Vdec2VoData->mVoLayer = hlay0;
+    AW_MPI_VO_SetVideoLayerPriority(pDemux2Vdec2VoData->mVoLayer, 11);
     AW_MPI_VO_GetVideoLayerAttr(pDemux2Vdec2VoData->mVoLayer, &pDemux2Vdec2VoData->mVoLayerAttr);
 
     pDemux2Vdec2VoData->mVoLayerAttr.stDispRect.X = 0;
     pDemux2Vdec2VoData->mVoLayerAttr.stDispRect.Y = 0;
-    pDemux2Vdec2VoData->mVoLayerAttr.stDispRect.Width = 640;
-    pDemux2Vdec2VoData->mVoLayerAttr.stDispRect.Height = 480;
+    pDemux2Vdec2VoData->mVoLayerAttr.stDispRect.Width = 1920;
+    pDemux2Vdec2VoData->mVoLayerAttr.stDispRect.Height = 1080;
     pDemux2Vdec2VoData->mVoLayerAttr.enPixFormat = pDemux2Vdec2VoData->mConfigPara.mUserSetPixelFormat;
     AW_MPI_VO_SetVideoLayerAttr(pDemux2Vdec2VoData->mVoLayer, &pDemux2Vdec2VoData->mVoLayerAttr);
 
@@ -597,7 +598,7 @@ err_out_2:
 
         AW_MPI_VO_DisableVideoLayer(pDemux2Vdec2VoData->mVoLayer);
         pDemux2Vdec2VoData->mVoLayer = MM_INVALID_CHN;
-        AW_MPI_VO_RemoveOutsideVideoLayer(pDemux2Vdec2VoData->mUILayer);
+        //AW_MPI_VO_RemoveOutsideVideoLayer(pDemux2Vdec2VoData->mUILayer);
         AW_MPI_VO_Disable(pDemux2Vdec2VoData->mVoDev);
         pDemux2Vdec2VoData->mVoDev = MM_INVALID_DEV;
     }

@@ -72,6 +72,14 @@ typedef struct awVO_pCap_S {
     VO_VIDEO_LAYER_ATTR_S mLayerAttr;
 } VO_Cap_S;
 
+int Running = 1;
+
+void handle_exit(int signo)
+{
+    alogd("I have known you want to exit! Please wait for this round finished !");
+    Running = 0;
+}
+
 static ERRORTYPE SampleVirvi2Dfish2VO_VOCallbackWrapper(void *cookie, MPP_CHN_S *pChn, MPP_EVENT_TYPE event, void *pEventData)
 {
     ERRORTYPE ret = SUCCESS;
@@ -248,16 +256,16 @@ int aw_vo_dev_creat(VO_Cap_S* pVoCap)
         aloge("Vo Dev%d creat failed",pVoCap->mVODev);
         return ret ;
     }
-    ret = AW_MPI_VO_AddOutsideVideoLayer(pVoCap->mUILayer);
-    if(ret < 0) {
-        aloge("Vo add UILayer%d failed",pVoCap->mUILayer);
-        return ret ;
-    }
-    ret = AW_MPI_VO_CloseVideoLayer(pVoCap->mUILayer);  //close ui layer.
-    if(ret < 0) {
-        aloge("Vo close UILayer%d failed",pVoCap->mUILayer);
-        return ret ;
-    }
+    //ret = AW_MPI_VO_AddOutsideVideoLayer(pVoCap->mUILayer);
+    //if(ret < 0) {
+    //    aloge("Vo add UILayer%d failed",pVoCap->mUILayer);
+    //    return ret ;
+    //}
+    //ret = AW_MPI_VO_CloseVideoLayer(pVoCap->mUILayer);  //close ui layer.
+    //if(ret < 0) {
+    //    aloge("Vo close UILayer%d failed",pVoCap->mUILayer);
+    //    return ret ;
+    //}
     //enable vo layer
     while(pVoCap->hlay0 < VO_MAX_LAYER_NUM) {
         if(SUCCESS == AW_MPI_VO_EnableVideoLayer(pVoCap->hlay0)) {
@@ -267,6 +275,11 @@ int aw_vo_dev_creat(VO_Cap_S* pVoCap)
     }
     if(pVoCap->hlay0 >= VO_MAX_LAYER_NUM) {
         aloge("fatal error! enable video layer%d fail!",pVoCap->hlay0);
+    }
+    ret = AW_MPI_VO_SetVideoLayerPriority(pVoCap->mVoLayer, 11);
+    if (ret < 0) {
+        aloge("Vo Layer%d Set LayerPriority failed",pVoCap->mVoLayer);
+        return ret;
     }
     ret = AW_MPI_VO_SetVideoLayerAttr(pVoCap->mVoLayer, &pVoCap->mLayerAttr);
     if(ret < 0) {
@@ -328,11 +341,11 @@ int aw_vo_chn_destory(VO_Cap_S* pVoCap)
         aloge("Disable Layer failed,Layer = %d",pVoCap->mVoLayer);
         return ret ;
     }
-    ret =  AW_MPI_VO_RemoveOutsideVideoLayer(pVoCap->mUILayer);
-    if(ret < 0) {
-        aloge("Remove Layer failed,Layer = %d",pVoCap->mUILayer);
-        return ret ;
-    }
+    //ret =  AW_MPI_VO_RemoveOutsideVideoLayer(pVoCap->mUILayer);
+    //if(ret < 0) {
+    //    aloge("Remove Layer failed,Layer = %d",pVoCap->mUILayer);
+    //    return ret ;
+    //}
     return ret;
 }
 
@@ -487,7 +500,12 @@ int main(int argc, char *argv[])
         goto _exit;
     }
     AutoTestCount = stContext.mConfigPara.AutoTestCount;
-    while (count != AutoTestCount) {
+
+    /* register process function for SIGINT, to exit program. */
+    if (signal(SIGINT, handle_exit) == SIG_ERR)
+        perror("can't catch SIGSEGV");
+
+    while(Running && count != AutoTestCount) {
         /*Set VI Channel Attribute*/
         for(i = 0; i < 2; i++) {
             memset(&pVICap[i], 0, sizeof(VIRVI_Cap_S));
@@ -557,7 +575,7 @@ int main(int argc, char *argv[])
 
         /*Set VO Channel Attribute*/
         memset(&pVOCap[0], 0, sizeof(VO_Cap_S));
-        pVOCap[0].mUILayer = HLAY(2, 0);
+        //pVOCap[0].mUILayer = HLAY(2, 0);
         pVOCap[0].mVODev = 0;
         pVOCap[0].mVOChn = 0;
         pVOCap[0].hlay0 = 0;
@@ -677,8 +695,6 @@ int main(int argc, char *argv[])
         }
         if(pVOCap[0].mTestDuration > 0) {
             cdx_sem_down_timedwait(&pVOCap[0].mSemExit, pVOCap[0].mTestDuration*1000);
-        } else {
-            cdx_sem_down(&pVOCap[0].mSemExit);
         }
 
         for (i = 0; i < 2; i++) {
@@ -804,10 +820,10 @@ sys_exit:
             result = -1;
             goto _exit;
         }
+        count ++;
         printf("======================================.\r\n");
         printf("Auto Test count end: %d. (MaxCount==1000).\r\n", count);
         printf("======================================.\r\n");
-        count++;
     }
     printf("sample_virvi2dfish2vo exit!\n");
     return 0;

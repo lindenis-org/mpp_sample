@@ -1,47 +1,42 @@
 include ../Makefile.param
 
 # target
-TARGET := sample_venc2muxer
+TARGET := sample_demux2vdec_saveFrame
 
 # target source
-SRC := \
-	sample_venc2muxer.c
+SRC := sample_demux2vdec_saveFrame.c
 
 # header
 INC := -I.\
     -I/usr/include/mpp/system/include \
-    -I/usr/include/mpp/system/include/rgb_ctrl \
-    -I/usr/include/mpp/system/include/libion \
     -I/usr/include/mpp/middleware/include \
     -I/usr/include/mpp/middleware/include/utils \
     -I/usr/include/mpp/middleware/include/media \
     -I/usr/include/mpp/middleware/media/include \
     -I/usr/include/mpp/middleware/media/include/utils \
     -I/usr/include/mpp/middleware/media/include/component \
-    -I/usr/include/mpp/middleware/media/LIBRARY/include_stream \
-    -I/usr/include/mpp/middleware/media/LIBRARY/include_FsWriter \
-    -I/usr/include/mpp/middleware/media/LIBRARY/include_muxer \
+    -I/usr/include/mpp/middleware/media/LIBRARY/libISE \
+    -I/usr/include/mpp/middleware/media/LIBRARY/libisp/include \
+    -I/usr/include/mpp/middleware/media/LIBRARY/libisp/include/V4l2Camera \
+    -I/usr/include/mpp/middleware/media/LIBRARY/libisp/isp_tuning \
+    -I/usr/include/mpp/middleware/media/LIBRARY/libAIE_Vda/include \
     -I/usr/include/mpp/middleware/media/LIBRARY/libcedarc/include \
     -I/usr/include/mpp/middleware/media/LIBRARY/libcedarx/libcore/common/iniparser \
     -I/usr/include/mpp/middleware/sample/configfileparser
 
 # share libraries
 LIBS := \
-	-llog \
-	-lion \
-    -lvencoder \
+    -llog \
     -lcdx_common \
     -lsample_confparser \
-    -lcedarxrender \
-   	-lmpp_vi \
-   	-lmpp_isp \
-   	-lmpp_ise \
-   	-lmpp_vo \
-   	-lmpp_component \
     -lmedia_mpp \
-    -lISP \
-    -lMemAdapter \
-    -lmedia_utils
+    -lmpp_vi \
+    -lmpp_vo \
+    -lmpp_isp \
+    -lmpp_ise \
+    -lmpp_component \
+    -lmedia_utils \
+    -lsample_confparser
 
 CFLAGS += $(INC)
 

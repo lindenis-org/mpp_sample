@@ -38,7 +38,7 @@ static FILE* OutputFile_Fd;
 int initSampleRegionContext(SampleRegionContext *pContext)
 {
     memset(pContext, 0, sizeof(SampleRegionContext));
-    pContext->mUILayer = HLAY(2, 0);
+    //pContext->mUILayer = HLAY(2, 0);
     cdx_sem_init(&pContext->mSemExit, 0);
     return 0;
 }
@@ -377,8 +377,8 @@ main(int argc, char **argv)
     //enable vo dev
     stContext.mVoDev = 0;
     AW_MPI_VO_Enable(stContext.mVoDev);
-    AW_MPI_VO_AddOutsideVideoLayer(stContext.mUILayer);
-    AW_MPI_VO_CloseVideoLayer(stContext.mUILayer);
+    //AW_MPI_VO_AddOutsideVideoLayer(stContext.mUILayer);
+    //AW_MPI_VO_CloseVideoLayer(stContext.mUILayer);
 
     //enable vo layer
     int hlay0 = 0;
@@ -392,6 +392,7 @@ main(int argc, char **argv)
         aloge("error: enable video layer failed");
     }
     stContext.mVoLayer = hlay0;
+    AW_MPI_VO_SetVideoLayerPriority(stContext.mVoLayer, 11);
     AW_MPI_VO_GetVideoLayerAttr(stContext.mVoLayer, &stContext.mLayerAttr);
     stContext.mLayerAttr.stDispRect.X = 0;
     stContext.mLayerAttr.stDispRect.Y = 0;
@@ -716,7 +717,7 @@ _exit:
     //disable vo layer
     AW_MPI_VO_DisableVideoLayer(stContext.mVoLayer);
     stContext.mVoLayer = -1;
-    AW_MPI_VO_RemoveOutsideVideoLayer(stContext.mUILayer);
+    //AW_MPI_VO_RemoveOutsideVideoLayer(stContext.mUILayer);
     //disalbe vo dev
     AW_MPI_VO_Disable(stContext.mVoDev);
     stContext.mVoDev = -1;

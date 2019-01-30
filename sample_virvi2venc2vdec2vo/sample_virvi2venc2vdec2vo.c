@@ -36,8 +36,8 @@
 #include "mm_comm_venc.h"
 #include "mm_comm_rc.h"
 #include "mpi_clock.h"
-#include "hwdisplay.h"
-#include "sunxi_display2.h"
+#include "vo/hwdisplay.h"
+#include "vo/sunxi_display2.h"
 
 #include <confparser.h>
 #include "sample_virvi2venc2vdec2vo.h"
@@ -497,11 +497,11 @@ static ERRORTYPE createVoChn(VI2Venc2Vdec2VO_Cap_S *pCap)
     SampleVirvi2Venc2Vdec2VOConfig *mConfigPara = &pCap->mConfigPara;
 
     pCap->mVoDev = 0;
-    pCap->mUILayer = HLAY(2, 0);
+    //pCap->mUILayer = HLAY(2, 0);
 
     AW_MPI_VO_Enable(pCap->mVoDev);
-    AW_MPI_VO_AddOutsideVideoLayer(pCap->mUILayer);
-    AW_MPI_VO_CloseVideoLayer(pCap->mUILayer);//close ui layer.
+    //AW_MPI_VO_AddOutsideVideoLayer(pCap->mUILayer);
+    //AW_MPI_VO_CloseVideoLayer(pCap->mUILayer);//close ui layer.
 
     //enable vo layer
     int hlay0 = 0;
@@ -515,7 +515,7 @@ static ERRORTYPE createVoChn(VI2Venc2Vdec2VO_Cap_S *pCap)
     if (hlay0 >= VO_MAX_LAYER_NUM) {
         aloge("fatal error! enable video layer fail!");
         pCap->mVoLayer = MM_INVALID_DEV;
-        AW_MPI_VO_RemoveOutsideVideoLayer(pCap->mUILayer);
+        //AW_MPI_VO_RemoveOutsideVideoLayer(pCap->mUILayer);
         AW_MPI_VO_Disable(pCap->mVoDev);
         return FAILURE;
     }
@@ -529,8 +529,8 @@ static ERRORTYPE createVoChn(VI2Venc2Vdec2VO_Cap_S *pCap)
 #endif
 
     pCap->mVoLayer = hlay0;
+    AW_MPI_VO_SetVideoLayerPriority(pCap->mVoLayer, 11);
     AW_MPI_VO_GetVideoLayerAttr(pCap->mVoLayer, &pCap->mVoLayerAttr);
-
     pCap->mVoLayerAttr.stDispRect.X = 0;
     pCap->mVoLayerAttr.stDispRect.Y = 0;
     pCap->mVoLayerAttr.stDispRect.Width = pCap->mConfigPara.mDisplayWidth;
@@ -623,7 +623,7 @@ static ERRORTYPE Vdec_Vo_Component_Exit(VI2Venc2Vdec2VO_Cap_S *pCap)
     AW_MPI_CLOCK_DestroyChn(pCap->mClockChn);
     AW_MPI_VO_DisableChn(pCap->mVoLayer, pCap->mVoChn);
     AW_MPI_VO_DisableVideoLayer(pCap->mVoLayer);
-    AW_MPI_VO_RemoveOutsideVideoLayer(pCap->mUILayer);
+    //AW_MPI_VO_RemoveOutsideVideoLayer(pCap->mUILayer);
     AW_MPI_VO_Disable(pCap->mVoDev);
     AW_MPI_VDEC_DestroyChn(pCap->mVdecChn);
 
